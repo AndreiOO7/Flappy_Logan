@@ -1,4 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&display=swap');
 @import url('components/header.css');
 @import url('components/footer.css');
 @import url('components/product-card.css');
 @import url('components/cart.css');
+@import url('components/leaderboard.css');
+@import url('components/home.css');
+
+:root {
+  --color-bg: #050d0a;
+  --color-header-bg: #050d0a;
+  --color-header-border: rgba(255, 255, 255, 0.06);
+  --color-primary: #e8ece9;
+  --color-text: #c8d4ce;
+  --color-text-muted: rgba(200, 212, 206, 0.55);
+  --color-logo: #0fcf8a;
+  --color-btn-active: #0b2c22;
+  --color-gray: #0f1a16;
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}

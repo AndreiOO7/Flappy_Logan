@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Таблица лидеров — Флаппи Логан</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ФЛАППИ<span class="logo__dash">-</span>ЛОГАН</a>
+
+    <nav class="nav">
+      <a href="index.html" class="nav__link">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z"/>
+        </svg>
+        Главная
+      </a>
+      <a href="leaderboard.html" class="nav__link nav__link--active">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M8 21h8"/>
+          <path d="M12 17v4"/>
+          <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/>
+          <path d="M7 4H4v2a3 3 0 0 0 3 3"/>
+          <path d="M17 4h3v2a3 3 0 0 1-3 3"/>
+        </svg>
+        Таблица лидеров
+      </a>
+      <a href="catalog.html" class="nav__link">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 7h12l-1 10H7L6 7Z"/>
+          <path d="M9 7V5a3 3 0 0 1 6 0v2"/>
+        </svg>
+        Маркет
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <a href="#login" class="header-actions__login">Войти</a>
+      <a href="#register" class="header-actions__register">Регистрация</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="leaderboard">
+      <div class="section-header">
+        <h2 class="section-header__title">Таблица лидеров</h2>
+        <p class="section-header__desc">
+          Лучшие игроки Флаппи Логан. Соревнуйся и займи своё место!
+        </p>
+      </div>
+
+      <!-- Top 3 Podium -->
+      <div class="podium">
+        <div class="podium__item podium__item--silver">
+          <div class="podium__rank">2</div>
+          <div class="podium__avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <div class="podium__name">PlayerTwo</div>
+          <div class="podium__score">2 850</div>
+          <div class="podium__medal podium__medal--silver">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="podium__item podium__item--gold">
+          <div class="podium__crown">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M2 19h20l-2-10-6 4-4-4-6 4-2 10Z"/>
+            </svg>
+          </div>
+          <div class="podium__rank">1</div>
+          <div class="podium__avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <div class="podium__name">Champion</div>
+          <div class="podium__score">4 200</div>
+          <div class="podium__medal podium__medal--gold">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="podium__item podium__item--bronze">
+          <div class="podium__rank">3</div>
+          <div class="podium__avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <div class="podium__name">PlayerThree</div>
+          <div class="podium__score">1 980</div>
+          <div class="podium__medal podium__medal--bronze">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <div class="leaderboard__table">
+        <div class="leaderboard__row leaderboard__row--header">
+          <span class="leaderboard__cell leaderboard__cell--rank">#</span>
+          <span class="leaderboard__cell leaderboard__cell--player">Игрок</span>
+          <span class="leaderboard__cell leaderboard__cell--score">Очки</span>
+          <span class="leaderboard__cell leaderboard__cell--games">Игр</span>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">4</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            SpeedRunner
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">1 750</span>
+          <span class="leaderboard__cell leaderboard__cell--games">89</span>
+        </div>
+
+        <!-- Row 5 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">5</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            FlappyFan
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">1 320</span>
+          <span class="leaderboard__cell leaderboard__cell--games">64</span>
+        </div>
+
+        <!-- Row 6 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">6</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            LoganDriver
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">1 100</span>
+          <span class="leaderboard__cell leaderboard__cell--games">52</span>
+        </div>
+
+        <!-- Row 7 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">7</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            BirdMaster
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">980</span>
+          <span class="leaderboard__cell leaderboard__cell--games">41</span>
+        </div>
+
+        <!-- Row 8 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">8</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            PixelPro
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">760</span>
+          <span class="leaderboard__cell leaderboard__cell--games">33</span>
+        </div>
+
+        <!-- Row 9 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">9</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            GameOver
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">540</span>
+          <span class="leaderboard__cell leaderboard__cell--games">27</span>
+        </div>
+
+        <!-- Row 10 -->
+        <div class="leaderboard__row">
+          <span class="leaderboard__cell leaderboard__cell--rank">10</span>
+          <span class="leaderboard__cell leaderboard__cell--player">
+            <span class="leaderboard__avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            Rookie
+          </span>
+          <span class="leaderboard__cell leaderboard__cell--score">320</span>
+          <span class="leaderboard__cell leaderboard__cell--games">15</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__brand">
+      <a href="index.html" class="footer__logo">ФЛАППИ ЛОГАН</a>
+      <p class="footer__tagline">Летай. Уклоняйся. Побеждай.</p>
+    </div>
+    <p class="footer__copyright">&copy; 2025 Флаппи Логан. Все права защищены.</p>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

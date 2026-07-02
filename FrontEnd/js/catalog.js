@@ -1,5 +1,5 @@
 import { fetchApi } from './api.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   // TODO: загрузка каталога и фильтры
 });
