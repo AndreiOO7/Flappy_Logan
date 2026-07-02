@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Каталог</title>
+  <title>Магазин — Флаппи Логан</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/main.css">
@@ -34,18 +34,23 @@
           <path d="M6 7h12l-1 10H7L6 7Z"/>
           <path d="M9 7V5a3 3 0 0 1 6 0v2"/>
         </svg>
-        Маркет
+        Магазин
       </a>
     </nav>
 
     <div class="header-actions">
-      <a href="#login" class="header-actions__login">Войти</a>
-      <a href="#register" class="header-actions__register">Регистрация</a>
+      <a href="#" class="header-actions__login" data-auth="login">Войти</a>
+      <a href="#" class="header-actions__register" data-auth="register">Регистрация</a>
     </div>
   </header>
 
   <main>
-    <h1>Каталог</h1>
+    <section class="shop">
+      <div class="shop__header">
+        <h1 class="shop__title">Магазин</h1>
+      </div>
+      <!-- Tabs and grid will be rendered by shop.js -->
+    </section>
   </main>
 
   <footer class="footer">
@@ -56,6 +61,6 @@
     <p class="footer__copyright">&copy; 2025 Флаппи Логан. Все права защищены.</p>
   </footer>
 
-  <script type="module" src="js/catalog.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
