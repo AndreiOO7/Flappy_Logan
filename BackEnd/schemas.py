@@ -49,4 +49,4 @@ class EquipSkinRequest(BaseModel):
 
 class GameResultRequest(BaseModel):
     score: int = Field(..., ge=0, description="Количество набранных очков")
-    gamesPlayed: int = Field(..., ge=1, description="Количество сыгранных игр (обычно 1)")
+    gamesPlayed: Optional[int] = None

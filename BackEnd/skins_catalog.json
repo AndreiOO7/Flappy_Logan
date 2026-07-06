@@ -1,0 +1,44 @@
+[
+  {
+    "id": "bird-default",
+    "name": "Обычная птица",
+    "category": "birds",
+    "price": 0,
+    "image": null
+  },
+  {
+    "id": "bird-red",
+    "name": "Красный кардинал",
+    "category": "birds",
+    "price": 200,
+    "image": "url-or-null"
+  },
+  {
+    "id": "pipe-default",
+    "name": "Классическая труба",
+    "category": "pipes",
+    "price": 0,
+    "image": null
+  },
+  {
+    "id": "pipe-neon",
+    "name": "Неоновая труба",
+    "category": "pipes",
+    "price": 350,
+    "image": "url-or-null"
+  },
+  {
+    "id": "bg-default",
+    "name": "Стандартный фон",
+    "category": "backgrounds",
+    "price": 0,
+    "image": null
+  },
+  {
+    "id": "bg-space",
+    "name": "Космический фон",
+    "category": "backgrounds",
+    "price": 500,
+    "image": "url-or-null"
+  }
+]

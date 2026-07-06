@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 import bcrypt
 import jwt
@@ -5,12 +6,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.core.database import get_db
-from backend.models import User
-
-SECRET_KEY = "SUPER_SECRET_FLAPPY_BIRD_KEY_123"
+from core.database import get_db
+from models import User
+from dotenv import load_dotenv
+load_dotenv()
+SECRET_KEY = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 

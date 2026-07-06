@@ -2,8 +2,8 @@ from fastapi import Depends, status, APIRouter
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import backend.models as models
-import backend.schemas as schemas
+import models
+import schemas
 from core.database import get_db
 from core.auth_utils import get_password_hash, verify_password, create_access_token, get_current_user
 from core.database import format_user_response
