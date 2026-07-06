@@ -300,8 +300,19 @@ async function handleBuy(skin, btn) {
       // Синхронизируем с бэкендом, чтобы получить актуальный баланс
       await syncUser();
     }
-  } catch {
-    // Локальный fallback
+  } catch (err) {
+    // Если ошибка содержит сообщение от API (например "Недостаточно монет" или "уже куплен") — показываем её
+    if (err.message && !err.message.startsWith('API error:')) {
+      btn.textContent = err.message;
+      btn.className = 'shop-card__buy shop-card__buy--disabled';
+      setTimeout(() => {
+        btn.textContent = 'Купить';
+        btn.className = 'shop-card__buy';
+        btn.disabled = false;
+      }, 3000);
+      return;
+    }
+    // Сетевая ошибка (API не отвечает) — локальный fallback
     handleLocalPurchase(skin, btn);
   }
 }

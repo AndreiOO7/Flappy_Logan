@@ -11,7 +11,49 @@
     "name": "Красный кардинал",
     "category": "birds",
     "price": 200,
-    "image": "url-or-null"
+    "image": null
+  },
+  {
+    "id": "bird-blue",
+    "name": "Голубая сойка",
+    "category": "birds",
+    "price": 350,
+    "image": null
+  },
+  {
+    "id": "bird-gold",
+    "name": "Золотой орёл",
+    "category": "birds",
+    "price": 500,
+    "image": null
+  },
+  {
+    "id": "bird-phoenix",
+    "name": "Феникс",
+    "category": "birds",
+    "price": 800,
+    "image": null
+  },
+  {
+    "id": "bird-owl",
+    "name": "Сова",
+    "category": "birds",
+    "price": 300,
+    "image": null
+  },
+  {
+    "id": "bird-penguin",
+    "name": "Пингвин",
+    "category": "birds",
+    "price": 450,
+    "image": null
+  },
+  {
+    "id": "bird-parrot",
+    "name": "Попугай",
+    "category": "birds",
+    "price": 600,
+    "image": null
   },
   {
     "id": "pipe-default",
@@ -21,11 +63,39 @@
     "image": null
   },
   {
+    "id": "pipe-dark",
+    "name": "Тёмный металл",
+    "category": "pipes",
+    "price": 250,
+    "image": null
+  },
+  {
     "id": "pipe-neon",
     "name": "Неоновая труба",
     "category": "pipes",
     "price": 350,
-    "image": "url-or-null"
+    "image": null
+  },
+  {
+    "id": "pipe-wood",
+    "name": "Деревянные",
+    "category": "pipes",
+    "price": 300,
+    "image": null
+  },
+  {
+    "id": "pipe-ice",
+    "name": "Ледяные",
+    "category": "pipes",
+    "price": 550,
+    "image": null
+  },
+  {
+    "id": "pipe-lava",
+    "name": "Лава",
+    "category": "pipes",
+    "price": 700,
+    "image": null
   },
   {
     "id": "bg-default",
@@ -35,10 +105,38 @@
     "image": null
   },
   {
+    "id": "bg-sunset",
+    "name": "Закат",
+    "category": "backgrounds",
+    "price": 300,
+    "image": null
+  },
+  {
+    "id": "bg-night",
+    "name": "Ночь",
+    "category": "backgrounds",
+    "price": 400,
+    "image": null
+  },
+  {
     "id": "bg-space",
     "name": "Космический фон",
     "category": "backgrounds",
     "price": 500,
-    "image": "url-or-null"
+    "image": null
+  },
+  {
+    "id": "bg-underwater",
+    "name": "Подводный",
+    "category": "backgrounds",
+    "price": 500,
+    "image": null
+  },
+  {
+    "id": "bg-retro",
+    "name": "Ретро",
+    "category": "backgrounds",
+    "price": 350,
+    "image": null
   }
 ]
