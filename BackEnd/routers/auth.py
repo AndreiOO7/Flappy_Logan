@@ -2,11 +2,13 @@ from fastapi import Depends, status, APIRouter
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from fastapi.security import OAuth2PasswordRequestForm
 import models
 import schemas
 from core.database import get_db
 from core.auth_utils import get_password_hash, verify_password, create_access_token, get_current_user
 from core.database import format_user_response
+from typing import Optional
 
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication & Authorization"])
@@ -45,12 +47,27 @@ async def register(user_data: schemas.UserAuth, db: AsyncSession = Depends(get_d
 
 
 @router.post("/login")
-async def login(user_data: schemas.UserAuth, db: AsyncSession = Depends(get_db)):
-    query = select(models.User).where(models.User.username == user_data.username)
+async def login(user_data: Optional[schemas.UserAuth] = None, form_data: Optional[OAuth2PasswordRequestForm] = Depends(), db: AsyncSession = Depends(get_db)):
+    if form_data and form_data.username:
+        username = form_data.username
+        password = form_data.password
+    elif user_data:
+        username = user_data.username
+        password = user_data.password
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": {"code": "BAD_REQUEST", "message": "Переданы пустые данные для входа"}}
+        )
+
+
+    query = select(models.User).where(models.User.username == username)
     result = await db.execute(query)
     user = result.scalars().first()
 
-    if not user or not verify_password(user_data.password, user.password_hash):
+    if not user or not verify_password(password, user.password_hash):
         return JSONResponse(
             status_code=401,
             content={"success": False, "error": {"code": "UNAUTHORIZED", "message": "Неверный логин или пароль"}}
@@ -65,6 +82,7 @@ async def login(user_data: schemas.UserAuth, db: AsyncSession = Depends(get_db))
     return {
         "success": True,
         "token": token,
+        "access_token": token,
         "user": format_user_response(user, user_skins)
     }
 
