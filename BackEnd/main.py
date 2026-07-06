@@ -14,7 +14,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5500",
-    "https://your-frontend-domain.com"
+    "https://proactive-reprieve-production-f162.up.railway.app"
 ]
 
 app.add_middleware(
