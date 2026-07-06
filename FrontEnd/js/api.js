@@ -1,4 +1,4 @@
-const API_BASE = 'flappylogan-production.up.railway.app/api';
+const API_BASE = 'https://flappylogan-production.up.railway.app/api';
 
 export async function fetchApi(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
