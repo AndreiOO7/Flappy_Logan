@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Если мы на странице магазина — инициализируем его
   if (document.querySelector('.shop')) {
-    initShop();
+    initShop().catch((err) => console.error('Shop init error:', err));
   }
 });
 

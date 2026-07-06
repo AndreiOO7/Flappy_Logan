@@ -1,43 +1,14 @@
 /**
  * Shop module — магазин скинов с тумблером категорий.
  *
- * Работает с мок-данными, но готов к подключению реального API.
+ * Загружает список скинов с бэкенда (GET /api/shop/skins).
  * Проверяет авторизацию через auth-модуль.
  */
 
 import { fetchApi } from './api.js';
 import { isAuthenticated, getCurrentUser, openLogin, applyUser, syncUser } from './auth.js';
 
-/* ================ Mock data ================ */
-
-const MOCK_SKINS = {
-  birds: [
-    { id: 'bird-default', name: 'Классическая', category: 'birds', price: 0, image: null, owned: true },
-    { id: 'bird-red', name: 'Красный кардинал', category: 'birds', price: 200, image: null },
-    { id: 'bird-blue', name: 'Голубая сойка', category: 'birds', price: 350, image: null },
-    { id: 'bird-gold', name: 'Золотой орёл', category: 'birds', price: 500, image: null },
-    { id: 'bird-phoenix', name: 'Феникс', category: 'birds', price: 800, image: null },
-    { id: 'bird-owl', name: 'Сова', category: 'birds', price: 300, image: null },
-    { id: 'bird-penguin', name: 'Пингвин', category: 'birds', price: 450, image: null },
-    { id: 'bird-parrot', name: 'Попугай', category: 'birds', price: 600, image: null },
-  ],
-  pipes: [
-    { id: 'pipe-default', name: 'Классические', category: 'pipes', price: 0, image: null, owned: true },
-    { id: 'pipe-dark', name: 'Тёмный металл', category: 'pipes', price: 250, image: null },
-    { id: 'pipe-neon', name: 'Неон', category: 'pipes', price: 400, image: null },
-    { id: 'pipe-wood', name: 'Деревянные', category: 'pipes', price: 300, image: null },
-    { id: 'pipe-ice', name: 'Ледяные', category: 'pipes', price: 550, image: null },
-    { id: 'pipe-lava', name: 'Лава', category: 'pipes', price: 700, image: null },
-  ],
-  backgrounds: [
-    { id: 'bg-default', name: 'Стандартный', category: 'backgrounds', price: 0, image: null, owned: true },
-    { id: 'bg-sunset', name: 'Закат', category: 'backgrounds', price: 300, image: null },
-    { id: 'bg-night', name: 'Ночь', category: 'backgrounds', price: 400, image: null },
-    { id: 'bg-space', name: 'Космос', category: 'backgrounds', price: 600, image: null },
-    { id: 'bg-underwater', name: 'Подводный', category: 'backgrounds', price: 500, image: null },
-    { id: 'bg-retro', name: 'Ретро', category: 'backgrounds', price: 350, image: null },
-  ],
-};
+/* ================ Категории ================ */
 
 const CATEGORIES = [
   { key: 'birds', label: 'Скины птиц' },
@@ -49,6 +20,7 @@ const CATEGORIES = [
 
 let currentCategory = 'birds';
 let userSkins = [];
+let catalogSkins = []; // все скины из каталога (с бэка)
 
 /* ================ DOM refs ================ */
 
@@ -58,7 +30,7 @@ let tabsEl = null;
 
 /* ================ Init ================ */
 
-export function initShop(containerSelector = '.shop') {
+export async function initShop(containerSelector = '.shop') {
   containerEl = document.querySelector(containerSelector);
   if (!containerEl) {
     console.warn('Shop container not found');
@@ -74,8 +46,25 @@ export function initShop(containerSelector = '.shop') {
     renderGrid();
   });
 
+  // Загружаем каталог скинов с бэкенда
+  await loadCatalog();
+
   // Загружаем скины пользователя
-  loadUserSkins();
+  await loadUserSkins();
+}
+
+/* ================ Загрузка каталога с бэкенда ================ */
+
+async function loadCatalog() {
+  try {
+    const data = await fetchApi('/shop/skins');
+    if (data && data.success && Array.isArray(data.skins)) {
+      catalogSkins = data.skins;
+    }
+  } catch (err) {
+    console.warn('Не удалось загрузить каталог скинов с бэкенда:', err.message);
+    catalogSkins = [];
+  }
 }
 
 /* ================ User skins ================ */
@@ -90,7 +79,7 @@ async function loadUserSkins() {
     userSkins = user.skins;
   }
 
-  // Пробуем загрузить с бэка (теперь с await, чтобы дождаться результата)
+  // Пробуем загрузить с бэка
   try {
     const data = await fetchApi('/shop/skins/user-skins');
     if (data && Array.isArray(data.skins)) {
@@ -118,6 +107,16 @@ async function loadUserSkins() {
 
 function isSkinOwned(skinId) {
   return userSkins.includes(skinId);
+}
+
+/* ================ Получение скинов для текущей категории ================ */
+
+function getSkinsForCategory(categoryKey) {
+  // Сначала фильтруем каталог по категории
+  const filtered = catalogSkins.filter((s) => s.category === categoryKey);
+
+  // Если каталог с бэка пуст (ошибка загрузки) — показываем пустую категорию
+  return filtered;
 }
 
 /* ================ Tabs ================ */
@@ -157,7 +156,7 @@ function renderGrid() {
   gridEl = document.createElement('div');
   gridEl.className = 'shop-grid';
 
-  const skins = MOCK_SKINS[currentCategory] || [];
+  const skins = getSkinsForCategory(currentCategory);
 
   if (skins.length === 0) {
     gridEl.innerHTML = `
