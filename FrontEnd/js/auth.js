@@ -111,6 +111,13 @@ function bindModalEvents(overlay) {
       return;
     }
 
+    // Валидация полей
+    const validationError = validateAuthFields(username, password, overlay.id === 'auth-register-overlay');
+    if (validationError) {
+      showError(overlay, validationError);
+      return;
+    }
+
     const isLogin = overlay.id === 'auth-login-overlay';
 
     try {
@@ -171,6 +178,13 @@ function saveLocalUsers(users) {
 
 function handleLocalAuth(isLogin, username, password, overlay) {
   const users = getLocalUsers();
+
+  // Валидация полей (для локального режима)
+  const validationError = validateAuthFields(username, password, !isLogin);
+  if (validationError) {
+    showError(overlay, validationError);
+    return;
+  }
 
   if (isLogin) {
     const stored = users[username];
@@ -383,52 +397,38 @@ function closeAllDropdowns() {
   });
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+/**
+ * Валидация полей регистрации/логина.
+ * @param {string} username
+ * @param {string} password
+ * @param {boolean} isRegister - true для регистрации (строгая валидация), false для логина (только проверка пароля)
+ * @returns {string|null} - сообщение об ошибке или null, если всё ок
+ */
+function validateAuthFields(username, password, isRegister) {
+  const USERNAME_REGEX = /^[a-zA-Z0-9]+$/;
+
+  if (isRegister) {
+    // Валидация username только при регистрации
+    if (username.length <= 3) {
+      return 'Юзернейм должен быть длиннее 3 символов';
+    }
+    if (username.length >= 20) {
+      return 'Юзернейм должен быть короче 20 символов';
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      return 'Юзернейм должен содержать только латиницу и цифры';
+    }
+  }
+
+  // Валидация пароля (всегда)
+  if (password.length < 4) {
+    return 'Пароль должен быть не меньше 4 символов';
+  }
+
+  return null;
 }
 
-/* ================ Инициализация ================ */
-
-export function initAuth() {
-  // Восстанавливаем сессию из localStorage
-  let restored = false;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const user = JSON.parse(raw);
-      if (user && user.username) {
-        // Добавляем стандартные скины, если их нет
-        const defaultSkins = ['bird-default', 'pipe-default', 'bg-default'];
-        let skins = user.skins || [];
-        let changed = false;
-        defaultSkins.forEach((s) => {
-          if (!skins.includes(s)) { skins.push(s); changed = true; }
-        });
-        if (changed) user.skins = skins;
-        currentUser = user;
-        restored = true;
-      }
-    }
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-
-  // Строим модалки после загрузки DOM
-  buildModals();
-  updateUI();
-
-  // Если есть токен — синхронизируем с бэкендом (обновит баланс, скины и т.д.)
-  if (localStorage.getItem('flappy_logan_token')) {
-    syncUser();
-  }
-
-  // Ловим клики по data-атрибутам, если ссылки уже в статическом HTML
-  document.addEventListener('click', (e) => {
-    const target = e.target.closest('[data-auth]');
-    if (!target) return;
-    e.preventDefault();
+function escapeHtml(str) {
     const action = target.dataset.auth;
     if (action === 'login') openLogin();
     else if (action === 'register') openRegister();
