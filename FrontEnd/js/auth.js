@@ -429,6 +429,51 @@ function validateAuthFields(username, password, isRegister) {
 }
 
 function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ================ Инициализация ================ */
+
+export function initAuth() {
+  // Восстанавливаем сессию из localStorage
+  let restored = false;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (user && user.username) {
+        // Добавляем стандартные скины, если их нет
+        const defaultSkins = ['bird-default', 'pipe-default', 'bg-default'];
+        let skins = user.skins || [];
+        let changed = false;
+        defaultSkins.forEach((s) => {
+          if (!skins.includes(s)) { skins.push(s); changed = true; }
+        });
+        if (changed) user.skins = skins;
+        currentUser = user;
+        restored = true;
+      }
+    }
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  // Строим модалки после загрузки DOM
+  buildModals();
+  updateUI();
+
+  // Если есть токен — синхронизируем с бэкендом (обновит баланс, скины и т.д.)
+  if (localStorage.getItem('flappy_logan_token')) {
+    syncUser();
+  }
+
+  // Ловим клики по data-атрибутам, если ссылки уже в статическом HTML
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-auth]');
+    if (!target) return;
+    e.preventDefault();
     const action = target.dataset.auth;
     if (action === 'login') openLogin();
     else if (action === 'register') openRegister();
