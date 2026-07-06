@@ -6,15 +6,20 @@ const API_BASE = '/api';
  */
 async function fetchLeaderboard() {
   try {
+    console.log('[Leaderboard] Подключаюсь к API:', `${API_BASE}/leaderboard`);
     const response = await fetch(`${API_BASE}/leaderboard`, {
       headers: { 'Content-Type': 'application/json' },
     });
+
+    console.log('[Leaderboard] Подключение установлено, статус:', response.status);
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('[Leaderboard] Данные от API:', data);
+    return data;
   } catch (error) {
     console.warn('API недоступен, использую демо-данные:', error.message);
     return getDemoData();
