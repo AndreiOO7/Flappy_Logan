@@ -11,4 +11,5 @@ export async function fetchApi(endpoint, options = {}) {
   }
 
   return response.json();
+
 }
