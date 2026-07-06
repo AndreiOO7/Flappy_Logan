@@ -301,8 +301,9 @@ async function handleBuy(skin, btn) {
       await syncUser();
     }
   } catch (err) {
-    // Если ошибка содержит сообщение от API (например "Недостаточно монет" или "уже куплен") — показываем её
-    if (err.message && !err.message.startsWith('API error:')) {
+    // Если API вернул осмысленную ошибку (недостаточно монет, уже куплен, скин не найден) — показываем пользователю
+    const isNetworkError = !err.message || err.message === 'Failed to fetch' || err.message.startsWith('NetworkError') || err.message.startsWith('API error:');
+    if (!isNetworkError && err.message) {
       btn.textContent = err.message;
       btn.className = 'shop-card__buy shop-card__buy--disabled';
       setTimeout(() => {
@@ -312,7 +313,7 @@ async function handleBuy(skin, btn) {
       }, 3000);
       return;
     }
-    // Сетевая ошибка (API не отвечает) — локальный fallback
+    // Сетевая ошибка (API не отвечает) — локальный fallback для офлайн-режима
     handleLocalPurchase(skin, btn);
   }
 }
