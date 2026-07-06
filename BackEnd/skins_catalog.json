@@ -7,15 +7,15 @@
     "image": null
   },
   {
-    "id": "bird-red",
-    "name": "Красный кардинал",
+    "id": "bird-logan",
+    "name": "Dacia Logan",
     "category": "birds",
     "price": 200,
     "image": null
   },
   {
-    "id": "bird-blue",
-    "name": "Голубая сойка",
+    "id": "bird-bsu",
+    "name": "Птичка БГУ",
     "category": "birds",
     "price": 350,
     "image": null
@@ -28,34 +28,6 @@
     "image": null
   },
   {
-    "id": "bird-phoenix",
-    "name": "Феникс",
-    "category": "birds",
-    "price": 800,
-    "image": null
-  },
-  {
-    "id": "bird-owl",
-    "name": "Сова",
-    "category": "birds",
-    "price": 300,
-    "image": null
-  },
-  {
-    "id": "bird-penguin",
-    "name": "Пингвин",
-    "category": "birds",
-    "price": 450,
-    "image": null
-  },
-  {
-    "id": "bird-parrot",
-    "name": "Попугай",
-    "category": "birds",
-    "price": 600,
-    "image": null
-  },
-  {
     "id": "pipe-default",
     "name": "Классическая труба",
     "category": "pipes",
@@ -63,38 +35,24 @@
     "image": null
   },
   {
-    "id": "pipe-dark",
-    "name": "Тёмный металл",
+    "id": "pipe-logan",
+    "name": "Преграды на дороге",
     "category": "pipes",
     "price": 250,
     "image": null
   },
   {
-    "id": "pipe-neon",
-    "name": "Неоновая труба",
+    "id": "pipe-bsu",
+    "name": "БГУ",
     "category": "pipes",
     "price": 400,
     "image": null
   },
   {
-    "id": "pipe-wood",
-    "name": "Деревянные",
+    "id": "pipe-gold",
+    "name": "Золотые",
     "category": "pipes",
     "price": 300,
-    "image": null
-  },
-  {
-    "id": "pipe-ice",
-    "name": "Ледяные",
-    "category": "pipes",
-    "price": 550,
-    "image": null
-  },
-  {
-    "id": "pipe-lava",
-    "name": "Лава",
-    "category": "pipes",
-    "price": 700,
     "image": null
   },
   {
@@ -105,38 +63,24 @@
     "image": null
   },
   {
-    "id": "bg-sunset",
-    "name": "Закат",
+    "id": "bg-logan",
+    "name": "МКАД",
     "category": "backgrounds",
     "price": 300,
     "image": null
   },
   {
-    "id": "bg-night",
-    "name": "Ночь",
+    "id": "bg-bsu",
+    "name": "Главка",
     "category": "backgrounds",
     "price": 400,
     "image": null
   },
   {
-    "id": "bg-space",
-    "name": "Космический фон",
+    "id": "bg-gold",
+    "name": "Золотые горы",
     "category": "backgrounds",
     "price": 600,
-    "image": null
-  },
-  {
-    "id": "bg-underwater",
-    "name": "Подводный",
-    "category": "backgrounds",
-    "price": 500,
-    "image": null
-  },
-  {
-    "id": "bg-retro",
-    "name": "Ретро",
-    "category": "backgrounds",
-    "price": 350,
     "image": null
   }
 ]
