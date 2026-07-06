@@ -25,16 +25,16 @@ async function fetchLeaderboard() {
  */
 function getDemoData() {
   return [
-    { rank: 1, name: 'Champion', score: 4200, games: 156 },
-    { rank: 2, name: 'PlayerTwo', score: 2850, games: 112 },
-    { rank: 3, name: 'PlayerThree', score: 1980, games: 87 },
-    { rank: 4, name: 'SpeedRunner', score: 1750, games: 89 },
-    { rank: 5, name: 'FlappyFan', score: 1320, games: 64 },
-    { rank: 6, name: 'LoganDriver', score: 1100, games: 52 },
-    { rank: 7, name: 'BirdMaster', score: 980, games: 41 },
-    { rank: 8, name: 'PixelPro', score: 760, games: 33 },
-    { rank: 9, name: 'GameOver', score: 540, games: 27 },
-    { rank: 10, name: 'Rookie', score: 320, games: 15 },
+    { rank: 1, username: 'Champion', score: 4200, games: 156 },
+    { rank: 2, username: 'PlayerTwo', score: 2850, games: 112 },
+    { rank: 3, username: 'PlayerThree', score: 1980, games: 87 },
+    { rank: 4, username: 'SpeedRunner', score: 1750, games: 89 },
+    { rank: 5, username: 'FlappyFan', score: 1320, games: 64 },
+    { rank: 6, username: 'LoganDriver', score: 1100, games: 52 },
+    { rank: 7, username: 'BirdMaster', score: 980, games: 41 },
+    { rank: 8, username: 'PixelPro', score: 760, games: 33 },
+    { rank: 9, username: 'GameOver', score: 540, games: 27 },
+    { rank: 10, username: 'Rookie', score: 320, games: 15 },
   ];
 }
 
@@ -91,7 +91,7 @@ function renderPodium(top3) {
               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
           </div>
-          <div class="podium__name">${player.name}</div>
+           <div class="podium__name">${player.username}</div>
           <div class="podium__score">${player.score.toLocaleString('ru-RU')}</div>
           <div class="podium__medal podium__medal--${medalClass}">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -128,7 +128,7 @@ function renderTable(players) {
                 <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
               </svg>
             </span>
-            ${player.name}
+            ${player.username}
           </span>
           <span class="leaderboard__cell leaderboard__cell--score">${player.score.toLocaleString('ru-RU')}</span>
           <span class="leaderboard__cell leaderboard__cell--games">${player.games}</span>
