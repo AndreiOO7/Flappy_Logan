@@ -6,7 +6,7 @@
  */
 
 import { fetchApi } from './api.js';
-import { isAuthenticated, getCurrentUser, openLogin, applyUser } from './auth.js';
+import { isAuthenticated, getCurrentUser, openLogin, applyUser, syncUser } from './auth.js';
 
 /* ================ Mock data ================ */
 
@@ -80,7 +80,7 @@ export function initShop(containerSelector = '.shop') {
 
 /* ================ User skins ================ */
 
-function loadUserSkins() {
+async function loadUserSkins() {
   userSkins = [];
 
   if (!isAuthenticated()) return;
@@ -90,28 +90,30 @@ function loadUserSkins() {
     userSkins = user.skins;
   }
 
-  // Пробуем загрузить с бэка
-  fetchApi('/shop/user-skins')
-    .then((data) => {
-      if (data && Array.isArray(data.skins)) {
-        userSkins = data.skins;
-      }
-    })
-    .catch(() => {
-      // fallback — локальные данные
-      try {
-        const raw = localStorage.getItem('flappy_logan_users');
-        if (raw) {
-          const users = JSON.parse(raw);
-          const username = getCurrentUser()?.username;
-          if (username && users[username]?.skins) {
-            userSkins = users[username].skins;
-          }
+  // Пробуем загрузить с бэка (теперь с await, чтобы дождаться результата)
+  try {
+    const data = await fetchApi('/shop/skins/user-skins');
+    if (data && Array.isArray(data.skins)) {
+      userSkins = data.skins.map((s) => (typeof s === 'string' ? s : s.skin_id));
+    }
+  } catch {
+    // fallback — локальные данные
+    try {
+      const raw = localStorage.getItem('flappy_logan_users');
+      if (raw) {
+        const users = JSON.parse(raw);
+        const username = getCurrentUser()?.username;
+        if (username && users[username]?.skins) {
+          userSkins = users[username].skins;
         }
-      } catch {
-        // ignore
       }
-    });
+    } catch {
+      // ignore
+    }
+  }
+
+  // После загрузки скинов — перерисовываем сетку
+  renderGrid();
 }
 
 function isSkinOwned(skinId) {
@@ -295,6 +297,8 @@ async function handleBuy(skin, btn) {
 
     if (data.success) {
       onPurchaseSuccess(skin, data);
+      // Синхронизируем с бэкендом, чтобы получить актуальный баланс
+      await syncUser();
     }
   } catch {
     // Локальный fallback

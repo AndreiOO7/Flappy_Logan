@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+import { fetchApi } from './api.js';
 
 /**
  * Загружает данные таблицы лидеров с бэкенда.
@@ -6,19 +6,13 @@ const API_BASE = '/api';
  */
 async function fetchLeaderboard() {
   try {
-    console.log('[Leaderboard] Подключаюсь к API:', `${API_BASE}/leaderboard`);
-    const response = await fetch(`${API_BASE}/leaderboard`, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    console.log('[Leaderboard] Подключение установлено, статус:', response.status);
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const data = await response.json();
+    console.log('[Leaderboard] Подключаюсь к API...');
+    const data = await fetchApi('/leaderboard');
     console.log('[Leaderboard] Данные от API:', data);
+    // API возвращает { success, players, total } — достаём players
+    if (data.players && Array.isArray(data.players)) {
+      return data.players;
+    }
     return data;
   } catch (error) {
     console.warn('API недоступен, использую демо-данные:', error.message);

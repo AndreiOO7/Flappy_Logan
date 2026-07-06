@@ -5,7 +5,7 @@
  * Экспортирует функции для использования в других модулях и инициализации.
  */
 
-import { fetchApi } from './api.js';
+import { fetchApi, setToken, clearToken } from './api.js';
 import { openProfile, openInventory } from './profile.js';
 
 const STORAGE_KEY = 'flappy_logan_user';
@@ -120,6 +120,12 @@ function bindModalEvents(overlay) {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
+
+      // Сохраняем токен, если он есть (логин)
+      if (data.token) {
+        setToken(data.token);
+      }
+
       applyUser(data.user);
       closeModal(overlay);
     } catch (err) {
@@ -234,8 +240,31 @@ export function applyUser(user) {
 export function logout() {
   currentUser = null;
   localStorage.removeItem(STORAGE_KEY);
+  clearToken();
   updateUI();
   window.dispatchEvent(new CustomEvent('auth:change', { detail: { user: null } }));
+}
+
+/**
+ * Синхронизирует данные пользователя с бэкендом.
+ * Вызывает /api/auth/me и обновляет локальное состояние.
+ * Если бэкенд недоступен — оставляет текущие данные.
+ */
+export async function syncUser() {
+  // Если нет токена — нечего синхронизировать
+  if (!localStorage.getItem('flappy_logan_token')) {
+    return;
+  }
+
+  try {
+    const data = await fetchApi('/auth/me');
+    if (data.success && data.user) {
+      applyUser(data.user);
+    }
+  } catch (err) {
+    // Бэкенд недоступен — оставляем локальные данные
+    console.warn('syncUser: бэкенд недоступен, использую кэш:', err.message);
+  }
 }
 
 /* ================ Обновление UI хедера ================ */
@@ -363,7 +392,8 @@ function escapeHtml(str) {
 /* ================ Инициализация ================ */
 
 export function initAuth() {
-  // Восстанавливаем сессию
+  // Восстанавливаем сессию из localStorage
+  let restored = false;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -378,6 +408,7 @@ export function initAuth() {
         });
         if (changed) user.skins = skins;
         currentUser = user;
+        restored = true;
       }
     }
   } catch {
@@ -387,6 +418,11 @@ export function initAuth() {
   // Строим модалки после загрузки DOM
   buildModals();
   updateUI();
+
+  // Если есть токен — синхронизируем с бэкендом (обновит баланс, скины и т.д.)
+  if (localStorage.getItem('flappy_logan_token')) {
+    syncUser();
+  }
 
   // Ловим клики по data-атрибутам, если ссылки уже в статическом HTML
   document.addEventListener('click', (e) => {
