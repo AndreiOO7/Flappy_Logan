@@ -47,22 +47,22 @@ async def register(user_data: schemas.UserAuth, db: AsyncSession = Depends(get_d
 
 
 @router.post("/login")
-async def login(user_data: Optional[schemas.UserAuth] = None, form_data: Optional[OAuth2PasswordRequestForm] = Depends(), db: AsyncSession = Depends(get_db)):
-    if form_data and form_data.username:
-        username = form_data.username
-        password = form_data.password
-    elif user_data:
-        username = user_data.username
-        password = user_data.password
-    else:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "success": False,
-                "error": {"code": "BAD_REQUEST", "message": "Переданы пустые данные для входа"}}
-        )
+async def login(
+    user_data: schemas.UserAuth,
+    db: AsyncSession = Depends(get_db)
+):
+    return await process_login(user_data.username, user_data.password, db)
 
 
+@router.post("/swagger-login", include_in_schema=False)
+async def swagger_login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db)
+):
+    return await process_login(form_data.username, form_data.password, db)
+
+
+async def process_login(username, password, db):
     query = select(models.User).where(models.User.username == username)
     result = await db.execute(query)
     user = result.scalars().first()
@@ -83,8 +83,50 @@ async def login(user_data: Optional[schemas.UserAuth] = None, form_data: Optiona
         "success": True,
         "token": token,
         "access_token": token,
-        "user": format_user_response(user, user_skins)
+        "token_type": "bearer",
+        "user": format_user_response(user, skin_list=user_skins)
     }
+#
+# @router.post("/login")
+# async def login(user_data: Optional[schemas.UserAuth] = None, form_data: Optional[OAuth2PasswordRequestForm] = Depends(), db: AsyncSession = Depends(get_db)):
+#     if form_data and form_data.username:
+#         username = form_data.username
+#         password = form_data.password
+#     elif user_data:
+#         username = user_data.username
+#         password = user_data.password
+#     else:
+#         return JSONResponse(
+#             status_code=400,
+#             content={
+#                 "success": False,
+#                 "error": {"code": "BAD_REQUEST", "message": "Переданы пустые данные для входа"}}
+#         )
+#
+#
+#     query = select(models.User).where(models.User.username == username)
+#     result = await db.execute(query)
+#     user = result.scalars().first()
+#
+#     if not user or not verify_password(password, user.password_hash):
+#         return JSONResponse(
+#             status_code=401,
+#             content={"success": False, "error": {"code": "UNAUTHORIZED", "message": "Неверный логин или пароль"}}
+#         )
+#
+#     skins_query = select(models.UserSkin.skin_id).where(models.UserSkin.user_id == user.id)
+#     skins_result = await db.execute(skins_query)
+#     user_skins = list(skins_result.scalars().all())
+#
+#     token = create_access_token(data={"userId": str(user.id), "sub": user.username})
+#
+#     return {
+#         "success": True,
+#         "token": token,
+#         "access_token": token,
+#         "token_type": "bearer",
+#         "user": format_user_response(user, user_skins)
+#     }
 
 
 @router.get("/me")
