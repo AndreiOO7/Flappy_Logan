@@ -30,6 +30,7 @@
   position: relative;
   transform: scale(0.92) translateY(12px);
   transition: transform 0.3s ease;
+  margin: 1rem;
 }
 
 .auth-overlay--open .auth-modal {
@@ -38,6 +39,22 @@
 
 .auth-modal--wide {
   max-width: 620px;
+}
+
+@media (max-width: 480px) {
+  .auth-modal {
+    padding: 1.5rem;
+    margin: 0.75rem;
+    border-radius: 16px;
+  }
+
+  .auth-modal__title {
+    font-size: 1.1rem;
+  }
+
+  .auth-form__input {
+    font-size: 16px; /* prevent zoom on iOS */
+  }
 }
 
 .auth-modal__close {

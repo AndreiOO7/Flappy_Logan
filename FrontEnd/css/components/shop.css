@@ -46,6 +46,22 @@
   white-space: nowrap;
 }
 
+@media (max-width: 480px) {
+  .shop-tabs {
+    max-width: 100%;
+    margin: 0 0.5rem;
+  }
+
+  .shop-tabs__btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .shop__title {
+    font-size: 1.5rem;
+  }
+}
+
 .shop-tabs__btn:hover {
   color: var(--color-text);
 }

@@ -161,7 +161,13 @@
 
 /* ===== How to Play Section ===== */
 .how-to-play {
-  padding: 0px 4rem;
+  padding: 4rem;
+}
+
+@media (max-width: 768px) {
+  .how-to-play {
+    padding: 4rem 1.5rem;
+  }
 }
 
 .section-header {
@@ -489,6 +495,22 @@
 
   .how-to-play {
     padding: 2.5rem 1rem;
+  }
+
+  .section-header__title {
+    font-size: 1.5rem;
+  }
+
+  .section-header__desc {
+    font-size: 0.9rem;
+  }
+
+  .feedback {
+    padding: 2.5rem 1rem;
+  }
+
+  .feedback__form {
+    padding: 1.5rem;
   }
 
   .cta {
