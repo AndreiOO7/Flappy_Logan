@@ -10,10 +10,12 @@ async function fetchLeaderboard() {
     const data = await fetchApi('/leaderboard');
     console.log('[Leaderboard] Данные от API:', data);
     // API возвращает { success, players, total } — достаём players
-    if (data.players && Array.isArray(data.players)) {
+    if (data.players && Array.isArray(data.players) && data.players.length > 0) {
       return data.players;
     }
-    return data;
+    // Если с бэка пришёл пустой список (ещё никто не играл) — используем демо-данные
+    console.log('[Leaderboard] Бэкенд вернул пустой список, использую демо-данные');
+    return getDemoData();
   } catch (error) {
     console.warn('API недоступен, использую демо-данные:', error.message);
     return getDemoData();
@@ -131,7 +133,7 @@ function renderTable(players) {
             ${player.username}
           </span>
           <span class="leaderboard__cell leaderboard__cell--score">${player.score.toLocaleString('ru-RU')}</span>
-          <span class="leaderboard__cell leaderboard__cell--games">${player.games}</span>
+          <span class="leaderboard__cell leaderboard__cell--games">${player.games ?? player.gamesPlayed ?? 0}</span>
         </div>
       `
     )

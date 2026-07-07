@@ -203,10 +203,10 @@ function handleLocalAuth(isLogin, username, password, overlay) {
       return;
     }
     const defaultSkins = ['bird-default', 'pipe-default', 'bg-default'];
-    const newUser = { password, balance: 1000, skins: [...defaultSkins] };
+    const newUser = { password, balance: 0, skins: [...defaultSkins] };
     users[username] = newUser;
     saveLocalUsers(users);
-    applyUser({ username, balance: 1000, skins: [...defaultSkins], avatar: null });
+    applyUser({ username, balance: 0, skins: [...defaultSkins], avatar: null });
   }
 
   closeModal(overlay);

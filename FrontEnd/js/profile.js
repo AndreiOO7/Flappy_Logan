@@ -12,6 +12,7 @@ import { getCurrentUser, applyUser } from './auth.js';
 let profileOverlay = null;
 let inventoryOverlay = null;
 let activeSkins = {};
+let catalogSkinsCache = null;
 
 const CATEGORY_META = {
   birds: { label: 'Скины птиц', icon: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm-4 7c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z' },
@@ -256,7 +257,7 @@ function saveLocalUsers(users) {
 
 /* ================ Inventory ================ */
 
-export function openInventory() {
+export async function openInventory() {
   const user = getCurrentUser();
   if (!user) return;
 
@@ -264,18 +265,18 @@ export function openInventory() {
     inventoryOverlay = buildOverlay('inventory-overlay', 'Инвентарь', true);
   }
 
-  renderInventory();
+  await renderInventory();
   openModal(inventoryOverlay);
 }
 
-function renderInventory() {
+async function renderInventory() {
   const content = inventoryOverlay.querySelector('.auth-modal__content');
   const user = getCurrentUser();
   if (!user) return;
 
-  loadActiveSkins();
+  await loadActiveSkins();
   const userSkins = user.skins || [];
-  const ALL_SKINS = getAllSkins();
+  const ALL_SKINS = await getAllSkins();
   const skinMap = {};
   ALL_SKINS.forEach((s) => { skinMap[s.id] = s; });
 
@@ -353,7 +354,21 @@ function renderInventory() {
   });
 }
 
-function loadActiveSkins() {
+async function loadActiveSkins() {
+  // Сначала пробуем загрузить с бэкенда
+  try {
+    const data = await fetchApi('/shop/equipped');
+    if (data && data.success && data.equipped) {
+      activeSkins = { ...data.equipped };
+      // Сохраняем в localStorage для fallback
+      localStorage.setItem('flappy_logan_active_skins', JSON.stringify(activeSkins));
+      return;
+    }
+  } catch {
+    // fallback — localStorage
+  }
+
+  // Fallback на localStorage
   try {
     const raw = localStorage.getItem('flappy_logan_active_skins');
     if (raw) {
@@ -366,7 +381,7 @@ function loadActiveSkins() {
   }
 }
 
-function equipSkin(skinId, category) {
+async function equipSkin(skinId, category) {
   activeSkins[category] = skinId;
   localStorage.setItem('flappy_logan_active_skins', JSON.stringify(activeSkins));
 
@@ -375,34 +390,33 @@ function equipSkin(skinId, category) {
     body: JSON.stringify({ skinId, category }),
   }).catch(() => {});
 
-  renderInventory();
+  await renderInventory();
 }
 
 /* ================ Helpers ================ */
 
-function getAllSkins() {
-  return [
-    { id: 'bird-default', name: 'Классическая', category: 'birds', price: 0, image: null },
-    { id: 'bird-red', name: 'Красный кардинал', category: 'birds', price: 200, image: null },
-    { id: 'bird-blue', name: 'Голубая сойка', category: 'birds', price: 350, image: null },
-    { id: 'bird-gold', name: 'Золотой орёл', category: 'birds', price: 500, image: null },
-    { id: 'bird-phoenix', name: 'Феникс', category: 'birds', price: 800, image: null },
-    { id: 'bird-owl', name: 'Сова', category: 'birds', price: 300, image: null },
-    { id: 'bird-penguin', name: 'Пингвин', category: 'birds', price: 450, image: null },
-    { id: 'bird-parrot', name: 'Попугай', category: 'birds', price: 600, image: null },
-    { id: 'pipe-default', name: 'Классические', category: 'pipes', price: 0, image: null },
-    { id: 'pipe-dark', name: 'Тёмный металл', category: 'pipes', price: 250, image: null },
-    { id: 'pipe-neon', name: 'Неон', category: 'pipes', price: 400, image: null },
-    { id: 'pipe-wood', name: 'Деревянные', category: 'pipes', price: 300, image: null },
-    { id: 'pipe-ice', name: 'Ледяные', category: 'pipes', price: 550, image: null },
-    { id: 'pipe-lava', name: 'Лава', category: 'pipes', price: 700, image: null },
-    { id: 'bg-default', name: 'Стандартный', category: 'backgrounds', price: 0, image: null },
-    { id: 'bg-sunset', name: 'Закат', category: 'backgrounds', price: 300, image: null },
-    { id: 'bg-night', name: 'Ночь', category: 'backgrounds', price: 400, image: null },
-    { id: 'bg-space', name: 'Космос', category: 'backgrounds', price: 600, image: null },
-    { id: 'bg-underwater', name: 'Подводный', category: 'backgrounds', price: 500, image: null },
-    { id: 'bg-retro', name: 'Ретро', category: 'backgrounds', price: 350, image: null },
+async function getAllSkins() {
+  // Используем кеш, если уже загрузили
+  if (catalogSkinsCache) return catalogSkinsCache;
+
+  try {
+    const data = await fetchApi('/shop/skins');
+    if (data && data.success && Array.isArray(data.skins)) {
+      catalogSkinsCache = data.skins;
+      return catalogSkinsCache;
+    }
+  } catch {
+    // fallback — используем стандартные скины
+  }
+
+  // Fallback — жёстко зашитый базовый набор
+  const fallback = [
+    { id: 'bird-default', name: 'Обычная птица', category: 'birds', price: 0, image: null },
+    { id: 'pipe-default', name: 'Классическая труба', category: 'pipes', price: 0, image: null },
+    { id: 'bg-default', name: 'Стандартный фон', category: 'backgrounds', price: 0, image: null },
   ];
+  catalogSkinsCache = fallback;
+  return fallback;
 }
 
 function getPlaceholderImage(skin) {
