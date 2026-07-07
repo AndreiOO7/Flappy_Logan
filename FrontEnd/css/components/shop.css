@@ -113,10 +113,11 @@
   transition: opacity 0.3s ease;
 }
 
-/* Pipe skins — квадратная иконка (верхняя часть нижней трубы) */
+/* Pipe skins — высокое узкое изображение (ширина = высота / 3) */
 .shop-card__image--pipe {
-  width: 100%;
+  width: auto;
   height: 100%;
+  aspect-ratio: 1 / 3;
   object-fit: cover;
   object-position: center top;
 }
