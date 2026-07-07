@@ -4,83 +4,95 @@
     "name": "Обычная птица",
     "category": "birds",
     "price": 0,
-    "image": null
+    "image": "https://i.ibb.co/wZw9SGYM/bird-default.png"
   },
   {
     "id": "bird-logan",
     "name": "Dacia Logan",
     "category": "birds",
     "price": 200,
-    "image": null
+    "image": "https://i.ibb.co/yzG3X7j/bird-logan.png"
   },
   {
     "id": "bird-bsu",
     "name": "Птичка БГУ",
     "category": "birds",
     "price": 350,
-    "image": null
+    "image": "https://i.ibb.co/yF0RChDz/bird-bsu.png"
   },
   {
     "id": "bird-gold",
     "name": "Золотой орёл",
     "category": "birds",
     "price": 500,
-    "image": null
+    "image": "https://i.ibb.co/jP09jHTw/bird-gold.png"
   },
   {
     "id": "pipe-default",
     "name": "Классическая труба",
     "category": "pipes",
     "price": 0,
-    "image": null
+    "image": {
+      "top": "https://i.ibb.co/35R2hm8p/pipe-default-top.png",
+      "bottom": "https://i.ibb.co/svbZd9q8/pipe-default-bot.png"
+    }
   },
   {
     "id": "pipe-logan",
     "name": "Преграды на дороге",
     "category": "pipes",
     "price": 250,
-    "image": null
+    "image": {
+      "top": "https://i.ibb.co/ymZcFwXm/pipe-logan-top.png",
+      "bottom": "https://i.ibb.co/XZNZhL5r/pipe-logan-bot.png"
+    }
   },
   {
     "id": "pipe-bsu",
     "name": "БГУ",
     "category": "pipes",
     "price": 400,
-    "image": null
+    "image": {
+      "top": "https://i.ibb.co/wFHy7TC8/pipe-bsu-top.png",
+      "bottom": "https://i.ibb.co/BH0fbStr/pipe-bsu-bot.png"
+    }
   },
   {
-    "id": "pipe-gold",
+    "id": "м",
     "name": "Золотые",
     "category": "pipes",
-    "price": 300,
-    "image": null
+    "price": 700,
+    "image": {
+      "top": "https://i.ibb.co/q8p92Vn/pipe-gold-top.png",
+      "bottom": "https://i.ibb.co/S4QFZvRX/pipe-gold-bot.png"
+    }
   },
   {
     "id": "bg-default",
     "name": "Стандартный фон",
     "category": "backgrounds",
     "price": 0,
-    "image": null
+    "image": "https://i.ibb.co/4Z5PdMJj/bg-default.png"
   },
   {
     "id": "bg-logan",
     "name": "МКАД",
     "category": "backgrounds",
     "price": 300,
-    "image": null
+    "image": "https://i.ibb.co/3YkBBCd5/bg-logan.png"
   },
   {
     "id": "bg-bsu",
     "name": "Главка",
     "category": "backgrounds",
     "price": 400,
-    "image": null
+    "image": "https://i.ibb.co/WpPDHh2s/bg-bsu.png"
   },
   {
     "id": "bg-gold",
     "name": "Золотые горы",
     "category": "backgrounds",
-    "price": 600,
-    "image": null
+    "price": 800,
+    "image": "https://i.ibb.co/pBxh6DHV/bg-gold.png"
   }
 ]
