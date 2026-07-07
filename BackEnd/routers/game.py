@@ -74,7 +74,7 @@ async def create_game_result(
     }
 
 
-@router.get("/bestscore")
+@router.get("/best-score")
 async def get_best_score(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     query = (
         select(func.max(models.GameResult.score)).where(models.GameResult.user_id == current_user.id)
