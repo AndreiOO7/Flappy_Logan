@@ -190,12 +190,37 @@ function createCard(skin) {
   const imageWrap = document.createElement('div');
   imageWrap.className = 'shop-card__image-wrap';
 
-  const img = document.createElement('img');
-  img.className = 'shop-card__image';
-  img.src = skin.image || getPlaceholderImage(skin);
-  img.alt = skin.name;
-  img.loading = 'lazy';
-  imageWrap.appendChild(img);
+  // Если скин — труба (image — объект с top/bottom), показываем два мини-изображения
+  if (skin.image && typeof skin.image === 'object' && skin.image.top && skin.image.bottom) {
+    // Добавляем класс для парных изображений
+    imageWrap.classList.add('shop-card__image-wrap--pipes');
+
+    const imgTop = document.createElement('img');
+    imgTop.className = 'shop-card__image shop-card__image--half';
+    imgTop.src = skin.image.top;
+    imgTop.alt = `${skin.name} (верх)`;
+    imgTop.loading = 'lazy';
+    imgTop.decoding = 'async';
+
+    const imgBottom = document.createElement('img');
+    imgBottom.className = 'shop-card__image shop-card__image--half';
+    imgBottom.src = skin.image.bottom;
+    imgBottom.alt = `${skin.name} (низ)`;
+    imgBottom.loading = 'lazy';
+    imgBottom.decoding = 'async';
+
+    imageWrap.appendChild(imgTop);
+    imageWrap.appendChild(imgBottom);
+  } else {
+    const img = document.createElement('img');
+    img.className = 'shop-card__image';
+    img.src = typeof skin.image === 'string' ? skin.image : getPlaceholderImage(skin);
+    img.alt = skin.name;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.fetchPriority = skin.price === 0 ? 'high' : 'low';
+    imageWrap.appendChild(img);
+  }
 
   // Body
   const body = document.createElement('div');
