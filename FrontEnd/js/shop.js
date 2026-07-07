@@ -49,6 +49,9 @@ export async function initShop(containerSelector = '.shop') {
   // Загружаем каталог скинов с бэкенда
   await loadCatalog();
 
+  // Перерисовываем сетку, чтобы показать скины даже неавторизованным пользователям
+  renderGrid();
+
   // Загружаем скины пользователя
   await loadUserSkins();
 }
