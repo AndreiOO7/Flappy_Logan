@@ -318,10 +318,11 @@ async function renderInventory() {
       html += '<div class="inv-slider">';
       items.forEach((skin) => {
         const isActive = activeSkins[cat] === skin.id;
+        const skinImage = getSkinImage(skin);
         html += `
           <div class="inv-slide ${isActive ? 'inv-slide--active' : ''}" data-skin-id="${skin.id}" data-category="${cat}">
             <div class="inv-slide__image">
-              <img src="${skin.image || getPlaceholderImage(skin)}" alt="${skin.name}" loading="lazy">
+              <img src="${skinImage}" alt="${skin.name}" loading="lazy">
             </div>
             <span class="inv-slide__name">${skin.name}</span>
             <span class="inv-slide__badge ${isActive ? 'inv-slide__badge--active' : 'inv-slide__badge--inactive'}">
@@ -417,6 +418,17 @@ async function getAllSkins() {
   ];
   catalogSkinsCache = fallback;
   return fallback;
+}
+
+/**
+ * Возвращает URL изображения для скина.
+ * Для труб (объект с top/bottom) показывает только нижнюю часть.
+ */
+function getSkinImage(skin) {
+  if (!skin.image) return getPlaceholderImage(skin);
+  if (typeof skin.image === 'object' && skin.image.bottom) return skin.image.bottom;
+  if (typeof skin.image === 'string') return skin.image;
+  return getPlaceholderImage(skin);
 }
 
 function getPlaceholderImage(skin) {
