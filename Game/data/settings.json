@@ -1,0 +1,9 @@
+{
+    "gravity": 0.8,
+    "jump_power": -7,
+    "pipe_speed": -5,
+    "pipe_interval": 1200,
+    "sound_enabled": true,
+    "difficulty": "hard",
+    "volume": 10
+}
