@@ -9,6 +9,8 @@ import models
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, class_=AsyncSession, autoflush=False, autocommit=False)
