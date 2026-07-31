@@ -1,8 +1,3 @@
-# src/models.py
-"""
-Модели данных для игры Flappy Logan
-"""
-
 import json
 from PyQt5.QtCore import QRect
 
@@ -63,7 +58,8 @@ class Settings:
         "jump_power": -9,
         "pipe_speed": -3,
         "pipe_interval": 1500,
-        "sound_enabled": True,
+        "sound_enabled": True,      # Общая громкость
+        "jump_sound_enabled": True, # Звук прыжка (отдельно)
         "difficulty": "normal",
         "volume": 80
     }
