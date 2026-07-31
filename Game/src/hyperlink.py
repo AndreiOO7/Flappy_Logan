@@ -1,7 +1,3 @@
-# src/hyperlink.py
-"""
-Виджет гиперссылки для игры Flappy Logan
-"""
 
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import Qt, QUrl
