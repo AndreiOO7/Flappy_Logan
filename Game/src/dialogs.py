@@ -1,17 +1,10 @@
-# src/dialogs.py
-"""
-Кастомные диалоговые окна для игры Flappy Logan
-"""
 
 from PyQt5.QtWidgets import QDialog, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt
 
 
 class CustomDialog(QDialog):
-    """
-    Кастомное диалоговое окно в стиле игры.
-    Поддерживает: информационные, предупреждающие и диалоги с выбором.
-    """
+
     
     def __init__(self, parent, title, message, is_warning=False, buttons=None):
         super().__init__(parent)
