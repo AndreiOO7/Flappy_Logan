@@ -1,13 +1,15 @@
-# game.py
 import random
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, 
-                             QHBoxLayout, QFrame, QComboBox, QSlider, QMessageBox, QApplication)
+                             QHBoxLayout, QFrame, QComboBox, QSlider, QMessageBox)
 from PyQt5.QtCore import Qt, QTimer, QUrl
 from PyQt5.QtGui import QPixmap, QPainter, QFont, QPen, QColor
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 
-from utils import GAME_WIDTH, GAME_HEIGHT, bird_x, bird_y, bird_width, bird_height
-from utils import pipe_x, pipe_y, pipe_width, pipe_height, center_window, load_asset
+from utils import (
+    GAME_WIDTH, GAME_HEIGHT, bird_x, bird_y, bird_width, bird_height,
+    pipe_x, pipe_y, pipe_width, pipe_height, center_window, load_asset,
+    get_audio_url
+)
 from models import Bird, Pipe, Settings
 from dialogs import CustomDialog
 from auth_manager import AuthManager
@@ -23,30 +25,28 @@ class FlappyBird(QWidget):
         self.username = username
         self.registration_window = registration_window
         
-        if auth_manager:
-            self.auth_manager = auth_manager
-        else:
-            self.auth_manager = AuthManager()
-        
+        self.auth_manager = auth_manager if auth_manager else AuthManager()
         self.auth_manager.refresh_session()
         
-        if self.auth_manager.is_authenticated():
-            print(f"✅ Игра запущена для пользователя: {self.auth_manager.get_username()}")
-            print(f"   Баланс: {self.auth_manager.get_balance()}")
-            print(f"   Лучший счет: {self.auth_manager.get_best_score()}")
-        else:
-            print("⚠️ Пользователь не авторизован!")
+        print(f"Игра запущена для пользователя: {self.auth_manager.get_username()}")
+        print(f"   Баланс: {self.auth_manager.get_balance()}")
+        print(f"   Лучший счёт: {self.auth_manager.get_best_score()}")
         
         self.api_client = APIClient(self.auth_manager)
         self.skin_manager = SkinManager(self.auth_manager, self.api_client)
         
-        self.player = QMediaPlayer()
+        self._pending_score = 0
+
+        self.music_player = QMediaPlayer()
         self.music_playing = False
         self.load_music()
+
+        self.sound_player = QMediaPlayer()
+        self.load_jump_sound()
         
         self.equipped_skins = self.skin_manager.load_equipped_skins()
-        
         self.settings = Settings()
+        
         self.menu_visible = False
         self.game_started = False
         self.is_paused = False
@@ -187,7 +187,7 @@ class FlappyBird(QWidget):
         """)
         self.menu_panel.hide()
         
-        self.go_restart_btn = QPushButton("Restart", self)
+        self.go_restart_btn = QPushButton("Рестарт", self)
         self.go_restart_btn.setFixedSize(100, 35)
         self.go_restart_btn.setStyleSheet("""
             QPushButton {
@@ -203,7 +203,7 @@ class FlappyBird(QWidget):
         self.go_restart_btn.hide()
         self.go_restart_btn.clicked.connect(self.restart_game)
         
-        self.go_menu_btn = QPushButton("Menu", self)
+        self.go_menu_btn = QPushButton("Меню", self)
         self.go_menu_btn.setFixedSize(100, 35)
         self.go_menu_btn.setStyleSheet("""
             QPushButton {
@@ -228,92 +228,134 @@ class FlappyBird(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
         self.show()
+        
+        self.start_music()
 
-    # ============================================================
-    # МУЗЫКА
-    # ============================================================
+
     
     def load_music(self):
-        music_path = "assets/music/track.mp3"
+        """Загружает фоновую музыку с бесконечным повтором"""
         try:
-            url = QUrl.fromLocalFile(music_path)
-            content = QMediaContent(url)
-            self.player.setMedia(content)
+            audio_url = get_audio_url("track.mp3")
+            
+            if audio_url is None:
+                print("Музыка не загружена (файл не найден)")
+                return
+            
+            content = QMediaContent(audio_url)
+            self.music_player.setMedia(content)
+            
+            self.music_player.mediaStatusChanged.connect(self._on_media_status_changed)
+            
             volume = self.settings.volume if hasattr(self.settings, 'volume') else 80
-            self.player.setVolume(volume)
+            self.music_player.setVolume(volume)
+            
+            print(f"Музыка загружена: {audio_url.toString()}")
         except Exception as e:
-            print(f"⚠️ Ошибка загрузки музыки: {e}")
-    
-    def start_music(self):
-        if not self.music_playing and self.settings.sound_enabled and self.game_started and not self.game_over and not self.show_main_menu:
-            try:
-                self.player.play()
-                self.music_playing = True
-            except Exception as e:
-                print(f"⚠️ Ошибка запуска музыки: {e}")
-    
-    def stop_music(self):
-        try:
-            self.player.stop()
-            self.music_playing = False
-        except Exception as e:
-            print(f"⚠️ Ошибка остановки музыки: {e}")
+            print(f"Ошибка загрузки музыки: {e}")
 
-    # ============================================================
-    # ЗАГРУЗКА АССЕТОВ
-    # ============================================================
+    def _on_media_status_changed(self, status):
+        """Перезапускает музыку, когда она заканчивается"""
+        if status == QMediaPlayer.EndOfMedia:
+            self.music_player.setPosition(0)
+            self.music_player.play()
+            print("Музыка перезапущена (бесконечный цикл)")
+
+    def start_music(self):
+        """Запускает фоновую музыку"""
+        if not self.music_playing and self.settings.sound_enabled:
+            try:
+                self.music_player.play()
+                self.music_playing = True
+                print("Музыка запущена")
+            except Exception as e:
+                print(f"Ошибка запуска музыки: {e}")
+
+    def stop_music(self):
+        """Останавливает фоновую музыку (только при закрытии приложения)"""
+        try:
+            self.music_player.stop()
+            self.music_playing = False
+            print("Музыка остановлена")
+        except Exception as e:
+            print(f"Ошибка остановки музыки: {e}")
+
+    def load_jump_sound(self):
+        """Загружает звук прыжка"""
+        try:
+            audio_url = get_audio_url("jump.mp3")
+            
+            if audio_url is None:
+                print("Звук прыжка не загружен (файл не найден)")
+                return
+            
+            content = QMediaContent(audio_url)
+            self.sound_player.setMedia(content)
+            self.sound_player.setVolume(self.settings.volume if hasattr(self.settings, 'volume') else 80)
+            
+            print(f"Звук прыжка загружен: {audio_url.toString()}")
+        except Exception as e:
+            print(f"Ошибка загрузки звука прыжка: {e}")
+
+    def play_jump_sound(self):
+        """Воспроизводит звук прыжка"""
+        if not self.settings.sound_enabled or not self.settings.jump_sound_enabled:
+            return
+        
+        try:
+            self.sound_player.setPosition(0)
+            self.sound_player.play()
+        except Exception as e:
+            print(f"Ошибка воспроизведения звука прыжка: {e}")
+
     
     def load_game_assets(self):
         bg_skin = self.equipped_skins.get("backgrounds", "bg-default")
         self.background_image = load_asset("backgrounds", bg_skin, GAME_WIDTH, GAME_HEIGHT)
-        if self.background_image is None:
-            self.background_image = QPixmap(GAME_WIDTH, GAME_HEIGHT)
-            self.background_image.fill(QColor(135, 206, 235))
         
         bird_skin = self.equipped_skins.get("birds", "bird-default")
         bird_pixmap = load_asset("birds", bird_skin, bird_width, bird_height)
-        if bird_pixmap is None:
-            bird_pixmap = QPixmap(bird_width, bird_height)
-            bird_pixmap.fill(QColor(255, 255, 0))
         self.bird_image = bird_pixmap
         
         top_pipe_skin = self.equipped_skins.get("pipes_top", "pipe-top-default")
         bottom_pipe_skin = self.equipped_skins.get("pipes_bottom", "pipe-bottom-default")
         
         self.top_pipe_image = load_asset("pipes", top_pipe_skin, pipe_width, pipe_height)
-        if self.top_pipe_image is None:
-            self.top_pipe_image = QPixmap(pipe_width, pipe_height)
-            self.top_pipe_image.fill(QColor(0, 255, 0))
-        
         self.bottom_pipe_image = load_asset("pipes", bottom_pipe_skin, pipe_width, pipe_height)
-        if self.bottom_pipe_image is None:
-            self.bottom_pipe_image = QPixmap(pipe_width, pipe_height)
-            self.bottom_pipe_image.fill(QColor(0, 255, 0))
 
-    # ============================================================
-    # ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
-    # ============================================================
     
     def load_user_data(self):
-        if self.auth_manager.is_authenticated():
-            user = self.auth_manager.user
-            if user:
-                self.best_score = user.get("bestScore", 0)
-                self.balance = user.get("balance", 0)
-                self.total_score = user.get("totalScore", 0)
-                self.games_played = user.get("gamesPlayed", 0)
+        user = self.auth_manager.user
+        if user:
+            self.best_score = user.get("bestScore", 0)
+            self.balance = user.get("balance", 0)
+            self.total_score = user.get("totalScore", 0)
+            self.games_played = user.get("gamesPlayed", 0)
 
     def save_user_stats(self):
         if self.score_saved:
+            return
+
+        if not self.auth_manager.is_authenticated():
+            print("Пользователь не авторизован, сохраняем локально")
+            current_score = int(self.score)
+            self.save_stats_local(current_score)
             return
         
         self.score_saved = True
         current_score = int(self.score)
         
-        success, message, data = self.api_client.save_game_result(
+        self._pending_score = current_score
+        
+        self.api_client.save_game_result_async(
             current_score,
-            self.games_played + 1
+            self.games_played + 1,
+            self._on_result_saved
         )
+
+    def _on_result_saved(self, success, message, data):
+        """Обработчик сохранения результата"""
+        current_score = self._pending_score
         
         if success:
             self.best_score = max(self.best_score, current_score)
@@ -322,46 +364,49 @@ class FlappyBird(QWidget):
             self.total_score += current_score
             self.games_played += 1
             
-            if self.auth_manager.is_authenticated():
-                self.auth_manager.update_user_data({
-                    "bestScore": self.best_score,
-                    "balance": self.balance,
-                    "totalScore": self.total_score,
-                    "gamesPlayed": self.games_played
-                })
-        else:
-            self.save_stats_local(current_score)
-
-    def save_stats_local(self, current_score):
-        self.best_score = max(self.best_score, current_score)
-        self.balance += current_score
-        self.total_score += current_score
-        self.games_played += 1
-        
-        if self.auth_manager.is_authenticated():
             self.auth_manager.update_user_data({
                 "bestScore": self.best_score,
                 "balance": self.balance,
                 "totalScore": self.total_score,
                 "gamesPlayed": self.games_played
             })
+            print("Результат сохранён на сервере")
+        else:
+            print(f"Ошибка сохранения на сервере: {message}")
+            self.save_stats_local(current_score)
 
-    # ============================================================
-    # ИГРОВАЯ ЛОГИКА
-    # ============================================================
+    def save_stats_local(self, current_score):
+        """Сохраняет статистику локально (без сервера)"""
+        self.best_score = max(self.best_score, current_score)
+        self.balance += current_score
+        self.total_score += current_score
+        self.games_played += 1
+        
+        self.auth_manager.update_user_data({
+            "bestScore": self.best_score,
+            "balance": self.balance,
+            "totalScore": self.total_score,
+            "gamesPlayed": self.games_played
+        })
+        print("Результат сохранён локально")
+
     
     def restart_game(self):
+        self.pipe_timer.stop()
+        self.game_timer.stop()
+        
         if not self.auth_manager.refresh_session():
-            CustomDialog.warning(self, "Ошибка", "❌ Пользователь не авторизован!")
+            CustomDialog.warning(self, "Ошибка", "Сессия истекла. Пожалуйста, войдите заново.")
             self.go_to_main_menu()
             return
         
-        if self.auth_manager.is_authenticated():
-            self.load_user_data()
-            self.skin_manager.sync_with_server()
-            self.equipped_skins = self.skin_manager.get_equipped_skins()
-            self.load_game_assets()
-            self.bird.img = self.bird_image
+        self.load_user_data()
+        
+        self.skin_manager.clear_cache()
+        self.skin_manager.sync_with_server()
+        self.equipped_skins = self.skin_manager.get_equipped_skins()
+        self.load_game_assets()
+        self.bird.img = self.bird_image
         
         self.bird.y = bird_y
         self.pipes.clear()
@@ -371,13 +416,14 @@ class FlappyBird(QWidget):
         self.score_saved = False
         self.game_started = True
         self.is_paused = False
+        
         self.go_restart_btn.hide()
         self.go_menu_btn.hide()
+        
+        self.game_timer.start(1000 // 60)
         self.pipe_timer.start(self.settings.pipe_interval)
         self.setFocus()
         
-        if not self.music_playing and self.settings.sound_enabled:
-            self.start_music()
 
     def create_pipes(self):
         if self.game_over or not self.game_started or self.is_paused:
@@ -408,10 +454,13 @@ class FlappyBird(QWidget):
             self.game_over = True
             self.game_started = False
             self.pipe_timer.stop()
+            
+            self.show_game_over_screen()
+            # Музыка продолжает играть
             self.save_user_stats()
-            self.show_game_over_buttons()
-            self.stop_music()
             return
+
+        bird_rect = self.bird.get_rect()
 
         for pipe in self.pipes:
             pipe.x += self.velocity_x
@@ -420,21 +469,22 @@ class FlappyBird(QWidget):
                 self.score += 0.5
                 pipe.passed = True
 
-            bird_rect = self.bird.get_rect()
-            pipe_rect = pipe.get_rect()
-            if bird_rect.intersects(pipe_rect):
+            if bird_rect.intersects(pipe.get_rect()):
                 self.game_over = True
                 self.game_started = False
                 self.pipe_timer.stop()
+                
+                self.show_game_over_screen()
+                # Музыка продолжает играть
                 self.save_user_stats()
-                self.show_game_over_buttons()
-                self.stop_music()
                 return
 
         while len(self.pipes) > 0 and self.pipes[0].x < -pipe_width:
             self.pipes.pop(0)
 
-    def show_game_over_buttons(self):
+    
+    def show_game_over_screen(self):
+        """Показывает экран Game Over"""
         center_x = GAME_WIDTH // 2
         center_y = GAME_HEIGHT // 2 + 140
         
@@ -443,10 +493,48 @@ class FlappyBird(QWidget):
         self.go_restart_btn.show()
         self.go_menu_btn.show()
 
-    # ============================================================
-    # ОТРИСОВКА
-    # ============================================================
-    
+    def draw_game_over_overlay(self, painter):
+        """Рисует оверлей Game Over"""
+        rect_w, rect_h = 380, 430
+        rx = (GAME_WIDTH - rect_w) // 2
+        ry = (GAME_HEIGHT - rect_h) // 2
+        
+        painter.setBrush(QColor(40, 40, 40, 220))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(rx, ry, rect_w, rect_h, 20, 20)
+        
+        painter.setBrush(Qt.NoBrush)
+        painter.setPen(QPen(QColor(80, 80, 80), 2))
+        painter.drawRoundedRect(rx, ry, rect_w, rect_h, 20, 20)
+        
+        cx, cy = rx + rect_w // 2, ry + rect_h // 2
+        
+        painter.setFont(QFont("Arial", 36, QFont.Bold))
+        painter.setPen(QPen(Qt.red))
+        text = "ИГРА ОКОНЧЕНА"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 150, text)
+
+        painter.setFont(QFont("Arial", 24, QFont.Bold))
+        painter.setPen(QPen(Qt.white))
+        text = f"Очки: {int(self.score)}"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 80, text)
+        
+        painter.setFont(QFont("Arial", 20, QFont.Bold))
+        painter.setPen(QPen(QColor("#0fcf8a")))
+        text = f"Лучший: {self.best_score}"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 25, text)
+        
+        text = f"Баланс: {self.balance}"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 20, text)
+
+        painter.setFont(QFont("Arial", 16))
+        painter.setPen(QPen(Qt.white))
+        text = "ПРОБЕЛ - Рестарт"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 70, text)
+        text = "ESC - Меню"
+        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 100, text)
+
+
     def paintEvent(self, event):
         painter = QPainter(self)
 
@@ -471,7 +559,7 @@ class FlappyBird(QWidget):
             
             painter.setFont(QFont("Arial", 50, QFont.Bold))
             painter.setPen(QPen(QColor("#0fcf8a")))
-            text = "⏸ PAUSED"
+            text = "ПАУЗА"
             painter.drawText((GAME_WIDTH - painter.fontMetrics().width(text)) // 2, GAME_HEIGHT // 2, text)
 
         if self.game_over:
@@ -481,8 +569,8 @@ class FlappyBird(QWidget):
 
     def draw_user_info(self, painter):
         username_text = f"{self.username}"
-        best_text = f"Best: {self.best_score}"
-        balance_text = f"💰 {self.balance}"
+        best_text = f"Лучший: {self.best_score}"
+        balance_text = f"Баланс: {self.balance}"
         
         painter.setFont(QFont("Arial", 20, QFont.Bold))
         username_width = painter.fontMetrics().width(username_text)
@@ -524,49 +612,6 @@ class FlappyBird(QWidget):
             balance_text
         )
 
-    def draw_game_over_overlay(self, painter):
-        rect_w, rect_h = 380, 430
-        rx = (GAME_WIDTH - rect_w) // 2
-        ry = (GAME_HEIGHT - rect_h) // 2
-        
-        painter.setBrush(QColor(40, 40, 40, 220))
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(rx, ry, rect_w, rect_h, 20, 20)
-        
-        painter.setBrush(Qt.NoBrush)
-        painter.setPen(QPen(QColor(80, 80, 80), 2))
-        painter.drawRoundedRect(rx, ry, rect_w, rect_h, 20, 20)
-        
-        cx, cy = rx + rect_w // 2, ry + rect_h // 2
-        
-        painter.setFont(QFont("Arial", 36, QFont.Bold))
-        painter.setPen(QPen(Qt.red))
-        text = "GAME OVER"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 150, text)
-
-        painter.setFont(QFont("Arial", 24, QFont.Bold))
-        painter.setPen(QPen(Qt.white))
-        text = f"🪙 {int(self.score)}"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 80, text)
-        
-        painter.setFont(QFont("Arial", 20, QFont.Bold))
-        painter.setPen(QPen(QColor("#0fcf8a")))
-        text = f"Best: {self.best_score}"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy - 25, text)
-        
-        text = f"💰 {self.balance}"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 20, text)
-
-        painter.setFont(QFont("Arial", 16))
-        painter.setPen(QPen(Qt.white))
-        text = "SPACE - Restart"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 70, text)
-        text = "ESC - Menu"
-        painter.drawText(cx - painter.fontMetrics().width(text) // 2, cy + 100, text)
-
-    # ============================================================
-    # МЕНЮ
-    # ============================================================
     
     def init_main_menu(self):
         layout = QVBoxLayout()
@@ -598,7 +643,7 @@ class FlappyBird(QWidget):
         user_label.setStyleSheet("font-size: 20px; color: #e0e0e0;")
         info_layout.addWidget(user_label)
 
-        self.stats_label = QLabel(f"Лучший: {self.best_score}  |   💰 Баланс: {self.balance}")
+        self.stats_label = QLabel(f"Лучший: {self.best_score}  |   Баланс: {self.balance}")
         self.stats_label.setAlignment(Qt.AlignCenter)
         self.stats_label.setStyleSheet("font-size: 20px; color: #e0e0e0;")
         info_layout.addWidget(self.stats_label)
@@ -661,10 +706,9 @@ class FlappyBird(QWidget):
         exit_btn.clicked.connect(self.exit_game)
         layout.addWidget(exit_btn, alignment=Qt.AlignCenter)
 
-        # Гиперссылка
         link_layout = QHBoxLayout()
         link_layout.setAlignment(Qt.AlignCenter)
-        website_link = Hyperlink("🌐 Наш сайт", Config.WEBSITE_URL)
+        website_link = Hyperlink("Наш сайт", Config.WEBSITE_URL)
         link_layout.addWidget(website_link)
         layout.addLayout(link_layout)
 
@@ -675,7 +719,7 @@ class FlappyBird(QWidget):
         layout.setSpacing(10)
         layout.setContentsMargins(25, 20, 25, 20)
 
-        continue_btn = QPushButton("▶ Продолжить")
+        continue_btn = QPushButton("Продолжить")
         continue_btn.setFixedHeight(50)
         continue_btn.setStyleSheet("""
             QPushButton {
@@ -709,7 +753,7 @@ class FlappyBird(QWidget):
         diff_layout.addWidget(diff_label)
         
         self.difficulty_combo = QComboBox()
-        self.difficulty_combo.addItems(["Легкая", "Нормальная", "Сложная"])
+        self.difficulty_combo.addItems(["Лёгкая", "Нормальная", "Сложная"])
         self.difficulty_combo.setCurrentText(self.get_difficulty_text())
         self.difficulty_combo.currentTextChanged.connect(self.change_difficulty)
         diff_layout.addWidget(self.difficulty_combo)
@@ -733,7 +777,7 @@ class FlappyBird(QWidget):
         self.volume_value.setObjectName("value_label")
         sound_layout.addWidget(self.volume_value)
         
-        self.mute_btn = QPushButton("🔇" if self.volume_slider.value() == 0 else "🔊")
+        self.mute_btn = QPushButton("Выкл" if self.volume_slider.value() == 0 else "Вкл")
         self.mute_btn.setFixedHeight(35)
         self.mute_btn.setStyleSheet("""
             QPushButton {
@@ -753,6 +797,27 @@ class FlappyBird(QWidget):
         """)
         self.mute_btn.clicked.connect(self.toggle_mute)
         sound_layout.addWidget(self.mute_btn)
+
+        self.jump_sound_btn = QPushButton("ПРЫЖОК")
+        self.jump_sound_btn.setFixedHeight(35)
+        self.jump_sound_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 2px solid #333333;
+                border-radius: 8px;
+                padding: 4px 10px;
+                font-size: 14px;
+                font-weight: 700;
+                min-width: 80px;
+                color: #888888;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.05);
+            }
+        """)
+        self.update_jump_sound_button()
+        self.jump_sound_btn.clicked.connect(self.toggle_jump_sound)
+        sound_layout.addWidget(self.jump_sound_btn)
         
         settings_layout.addLayout(sound_layout)
         settings_frame.setLayout(settings_layout)
@@ -779,26 +844,22 @@ class FlappyBird(QWidget):
             btn.clicked.connect(slot)
             layout.addWidget(btn)
 
-        # Гиперссылка
         link_layout = QHBoxLayout()
         link_layout.setAlignment(Qt.AlignCenter)
-        website_link = Hyperlink("🌐 Наш сайт", Config.WEBSITE_URL)
+        website_link = Hyperlink("Наш сайт", Config.WEBSITE_URL)
         link_layout.addWidget(website_link)
         layout.addLayout(link_layout)
 
         self.menu_panel.setLayout(layout)
 
-    # ============================================================
-    # НАСТРОЙКИ
-    # ============================================================
     
     def get_difficulty_text(self):
-        return {"easy": "Легкая", "normal": "Нормальная", "hard": "Сложная"}.get(
+        return {"easy": "Лёгкая", "normal": "Нормальная", "hard": "Сложная"}.get(
             self.settings.difficulty, "Нормальная"
         )
 
     def change_difficulty(self, text):
-        diff_map = {"Легкая": "easy", "Нормальная": "normal", "Сложная": "hard"}
+        diff_map = {"Лёгкая": "easy", "Нормальная": "normal", "Сложная": "hard"}
         self.settings.difficulty = diff_map.get(text, "normal")
         
         params = {
@@ -822,56 +883,93 @@ class FlappyBird(QWidget):
     def change_volume(self):
         volume = self.volume_slider.value()
         self.volume_value.setText(f"{volume}%")
-        self.player.setVolume(volume)
+        self.music_player.setVolume(volume)
+        self.sound_player.setVolume(volume)
         self.settings.volume = volume
         self.settings.sound_enabled = volume > 0
-        self.mute_btn.setText("🔇" if volume == 0 else "🔊")
+        self.mute_btn.setText("Выкл" if volume == 0 else "Вкл")
         
-        if volume == 0 and self.music_playing:
-            self.stop_music()
 
     def toggle_mute(self):
         if self.volume_slider.value() > 0:
             self.volume_slider.setValue(0)
-            self.mute_btn.setText("🔇")
+            self.mute_btn.setText("Выкл")
             self.settings.sound_enabled = False
             self.settings.volume = 0
-            self.player.setVolume(0)
-            if self.music_playing:
-                self.stop_music()
+            
+            self.music_player.setVolume(0)
+            self.sound_player.setVolume(0)
         else:
             self.volume_slider.setValue(80)
-            self.mute_btn.setText("🔊")
+            self.mute_btn.setText("Вкл")
             self.settings.sound_enabled = True
             self.settings.volume = 80
-            self.player.setVolume(80)
+            self.music_player.setVolume(80)
+            self.sound_player.setVolume(80)
+            
+            if not self.music_playing:
+                self.start_music()
+                
         self.volume_value.setText(f"{self.volume_slider.value()}%")
+
+    def toggle_jump_sound(self):
+        """Переключает звук прыжка"""
+        self.settings.jump_sound_enabled = not self.settings.jump_sound_enabled
+        self.update_jump_sound_button()
+        print(f"Звук прыжка: {'Вкл' if self.settings.jump_sound_enabled else 'Выкл'}")
+
+    def update_jump_sound_button(self):
+        """Обновляет цвет кнопки звука прыжка"""
+        if self.settings.jump_sound_enabled:
+            self.jump_sound_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #0fcf8a;
+                    border: 2px solid #0fcf8a;
+                    border-radius: 8px;
+                    padding: 4px 10px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(15, 207, 138, 0.2);
+                }
+            """)
+        else:
+            self.jump_sound_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #ff4444;
+                    border: 2px solid #ff4444;
+                    border-radius: 8px;
+                    padding: 4px 10px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 68, 68, 0.2);
+                }
+            """)
 
     def save_settings(self):
         self.settings.save_settings()
-        CustomDialog.information(self, "Успех", "✅ Настройки сохранены!")
+        CustomDialog.information(self, "Успех", "Настройки сохранены!")
 
-    # ============================================================
-    # УПРАВЛЕНИЕ МЕНЮ
-    # ============================================================
     
     def start_game_from_menu(self):
         if not self.auth_manager.refresh_session():
-            CustomDialog.warning(self, "Ошибка", "❌ Пользователь не авторизован!\nПожалуйста, войдите заново.")
+            CustomDialog.warning(self, "Ошибка", "Сессия истекла. Пожалуйста, войдите заново.")
             self.go_to_main_menu()
             return
         
-        if self.auth_manager.is_authenticated():
-            self.load_user_data()
-            self.skin_manager.sync_with_server()
-            self.equipped_skins = self.skin_manager.get_equipped_skins()
-            self.load_game_assets()
-            self.bird.img = self.bird_image
-            self.update_main_menu_stats()
-        else:
-            CustomDialog.warning(self, "Ошибка", "❌ Пользователь не авторизован!\nПожалуйста, войдите заново.")
-            self.go_to_main_menu()
-            return
+        self.load_user_data()
+        self.skin_manager.sync_with_server()
+        self.equipped_skins = self.skin_manager.get_equipped_skins()
+        self.load_game_assets()
+        self.bird.img = self.bird_image
+        self.update_main_menu_stats()
         
         self.main_menu_panel.hide()
         self.overlay.hide()
@@ -883,9 +981,6 @@ class FlappyBird(QWidget):
         self.go_menu_btn.hide()
         self.pipe_timer.start(self.settings.pipe_interval)
         self.setFocus()
-        
-        if self.settings.sound_enabled and not self.music_playing:
-            self.start_music()
 
     def open_settings_from_menu(self):
         self.is_settings_from_menu = True
@@ -896,7 +991,8 @@ class FlappyBird(QWidget):
         volume = self.settings.volume if hasattr(self.settings, 'volume') else 80
         self.volume_slider.setValue(volume)
         self.volume_value.setText(f"{volume}%")
-        self.mute_btn.setText("🔇" if volume == 0 else "🔊")
+        self.mute_btn.setText("Выкл" if volume == 0 else "Вкл")
+        self.update_jump_sound_button()
 
     def close_pause_menu(self):
         self.menu_panel.hide()
@@ -916,14 +1012,10 @@ class FlappyBird(QWidget):
             self.is_paused = False
             if self.game_started and not self.game_over:
                 self.pipe_timer.start(self.settings.pipe_interval)
-                if self.settings.sound_enabled and not self.music_playing:
-                    self.start_music()
         
         self.setFocus()
 
     def go_to_main_menu(self):
-        if self.music_playing:
-            self.stop_music()
         
         if self.is_settings_from_menu:
             self.menu_panel.hide()
@@ -978,31 +1070,23 @@ class FlappyBird(QWidget):
 
     def update_main_menu_stats(self):
         if not self.auth_manager.refresh_session():
-            self.stats_label.setText(f"Лучший: {self.best_score}  |   💰 Баланс: {self.balance}")
+            self.go_to_main_menu()
             return
         
-        if self.auth_manager.is_authenticated():
-            self.skin_manager.sync_with_server()
-            self.equipped_skins = self.skin_manager.get_equipped_skins()
-            self.load_game_assets()
-            self.bird.img = self.bird_image
-            
-            success, _, best_score = self.api_client.get_best_score()
-            if success:
-                self.auth_manager.update_user_data({"bestScore": best_score})
-            
-            self.load_user_data()
+        self.skin_manager.sync_with_server()
+        self.equipped_skins = self.skin_manager.get_equipped_skins()
+        self.load_game_assets()
+        self.bird.img = self.bird_image
         
-        self.stats_label.setText(f"Лучший: {self.best_score}  |   💰 Баланс: {self.balance}")
+        success, _, best_score = self.api_client.get_best_score()
+        if success:
+            self.auth_manager.update_user_data({"bestScore": best_score})
+        
+        self.load_user_data()
+        self.stats_label.setText(f"Лучший: {self.best_score}  |   Баланс: {self.balance}")
 
-    # ============================================================
-    # ВЫХОД ИЗ АККАУНТА
-    # ============================================================
-    
+
     def exit_game(self):
-        if self.music_playing:
-            self.stop_music()
-        
         if CustomDialog.question(self, 'Выход из аккаунта', 'Вы уверены, что хотите выйти из аккаунта?') == QMessageBox.Yes:
             self.game_timer.stop()
             self.pipe_timer.stop()
@@ -1012,9 +1096,6 @@ class FlappyBird(QWidget):
             self.registration_window = RegistrationWindow()
             self.registration_window.show()
 
-    # ============================================================
-    # ОБРАБОТКА СОБЫТИЙ
-    # ============================================================
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -1036,13 +1117,13 @@ class FlappyBird(QWidget):
             if self.game_started and not self.game_over:
                 self.is_paused = True
                 self.pipe_timer.stop()
-                if self.music_playing:
-                    self.stop_music()
+                # Музыка продолжает играть
             self.difficulty_combo.setCurrentText(self.get_difficulty_text())
             volume = self.settings.volume if hasattr(self.settings, 'volume') else 80
             self.volume_slider.setValue(volume)
             self.volume_value.setText(f"{volume}%")
-            self.mute_btn.setText("🔇" if volume == 0 else "🔊")
+            self.mute_btn.setText("Выкл" if volume == 0 else "Вкл")
+            self.update_jump_sound_button()
             return
             
         if event.key() in (Qt.Key_Space, Qt.Key_X, Qt.Key_Up):
@@ -1054,52 +1135,51 @@ class FlappyBird(QWidget):
                 self.game_started = True
                 self.is_paused = False
                 self.pipe_timer.start(self.settings.pipe_interval)
-                if self.settings.sound_enabled and not self.music_playing:
-                    self.start_music()
+                # Музыка уже играет
             elif not self.is_paused:
                 self.velocity_y = self.settings.jump_power
+                self.play_jump_sound()
 
-    # ============================================================
-    # ОБРАБОТКА КЛИКА МЫШИ
-    # ============================================================
-    
     def mousePressEvent(self, event):
-        """Обработка клика мыши для прыжка"""
-        # Проверяем, что нажата левая кнопка мыши
         if event.button() == Qt.LeftButton:
-            
-            # ===== СЦЕНАРИЙ 1: ГЛАВНОЕ МЕНЮ =====
             if self.show_main_menu:
-                return  # Игнорируем клик в главном меню
-            
-            # ===== СЦЕНАРИЙ 2: GAME OVER =====
-            if self.game_over:
-                self.restart_game()  # Перезапускаем игру
                 return
             
-            # ===== СЦЕНАРИЙ 3: ПЕРЕД СТАРТОМ =====
+            if self.game_over:
+                self.restart_game()
+                return
+            
             if not self.game_started:
                 self.game_started = True
                 self.is_paused = False
                 self.pipe_timer.start(self.settings.pipe_interval)
-                if self.settings.sound_enabled and not self.music_playing:
-                    self.start_music()
+                # Музыка уже играет
                 return
             
-            # ===== СЦЕНАРИЙ 4: ПАУЗА =====
             if self.is_paused:
-                return  # Игнорируем клик на паузе
+                return
             
-            # ===== СЦЕНАРИЙ 5: АКТИВНАЯ ИГРА =====
-            # Прыжок!
             self.velocity_y = self.settings.jump_power
+            self.play_jump_sound()
 
     def game_loop(self):
         self.move_bird()
         self.update()
 
     def closeEvent(self, event):
+        if self.game_started and not self.game_over:
+            reply = CustomDialog.question(
+                self, 
+                "Выход", 
+                "Вы уверены, что хотите выйти?\nПрогресс игры будет потерян."
+            )
+            if reply == QMessageBox.No:
+                event.ignore()
+                return
+        
         self.stop_music()
+        self.music_player.deleteLater()
+        self.sound_player.deleteLater()
         self.game_timer.stop()
         self.pipe_timer.stop()
         event.accept()
