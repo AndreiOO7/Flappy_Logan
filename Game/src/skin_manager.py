@@ -1,8 +1,4 @@
-# src/skin_manager.py
-"""
-Менеджер скинов для игры Flappy Logan
-Управляет загрузкой, кэшированием и синхронизацией скинов
-"""
+
 
 import os
 import json
@@ -20,6 +16,8 @@ class SkinManager:
         self._cache = {
             "birds": {},
             "pipes": {},
+            "pipes_top": {},
+            "pipes_bottom": {},
             "backgrounds": {}
         }
         
@@ -31,10 +29,6 @@ class SkinManager:
         }
         
         self.load_equipped_from_cache()
-    
-    # ============================================================
-    # ЗАГРУЗКА ИЗОБРАЖЕНИЙ
-    # ============================================================
     
     def load_skin_image(self, category, skin_id, width=None, height=None):
         """Загружает изображение скина с кэшированием"""
@@ -53,10 +47,10 @@ class SkinManager:
             from PyQt5.QtGui import QColor
             pixmap = QPixmap(width or 100, height or 100)
             colors = {
-                "birds": QColor(255, 255, 0),
-                "pipes": QColor(0, 255, 0),
-                "pipes_top": QColor(0, 255, 0),
-                "pipes_bottom": QColor(0, 255, 0),
+                "birds": QColor(255, 215, 0),
+                "pipes": QColor(0, 200, 0),
+                "pipes_top": QColor(0, 200, 0),
+                "pipes_bottom": QColor(0, 200, 0),
                 "backgrounds": QColor(135, 206, 235)
             }
             pixmap.fill(colors.get(category, QColor(128, 128, 128)))
@@ -67,19 +61,8 @@ class SkinManager:
         
         return pixmap
     
-    def load_bird(self, skin_id, width=None, height=None):
-        return self.load_skin_image("birds", skin_id, width, height)
-    
-    def load_pipe_top(self, skin_id, width=None, height=None):
-        return self.load_skin_image("pipes_top", skin_id, width, height)
-    
-    def load_pipe_bottom(self, skin_id, width=None, height=None):
-        return self.load_skin_image("pipes_bottom", skin_id, width, height)
-    
-    def load_background(self, skin_id, width=None, height=None):
-        return self.load_skin_image("backgrounds", skin_id, width, height)
-    
     def clear_cache(self):
+        """Очищает кэш изображений"""
         self._cache = {
             "birds": {},
             "pipes": {},
@@ -87,15 +70,14 @@ class SkinManager:
             "pipes_bottom": {},
             "backgrounds": {}
         }
-    
-    # ============================================================
-    # УПРАВЛЕНИЕ АКТИВНЫМИ СКИНАМИ
-    # ============================================================
+        print("Кэш скинов очищен")
     
     def get_equipped_skins(self):
+        """Возвращает активные скины"""
         return self.equipped.copy()
     
     def reset_equipped(self):
+        """Сбрасывает активные скины на дефолтные"""
         self.equipped = {
             "birds": Config.DEFAULT_SKINS.get("birds", "bird-default"),
             "pipes_top": Config.DEFAULT_SKINS.get("pipes_top", "pipe-top-default"),
@@ -104,20 +86,18 @@ class SkinManager:
         }
         self.save_equipped_to_cache()
     
-    # ============================================================
-    # КЭШИРОВАНИЕ
-    # ============================================================
-    
     def save_equipped_to_cache(self):
+        """Сохраняет активные скины в кэш"""
         try:
             with open(Config.EQUIPPED_SKINS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.equipped, f, ensure_ascii=False, indent=2)
             return True
         except Exception as e:
-            print(f"⚠️ Ошибка сохранения скинов: {e}")
+            print(f"Ошибка сохранения скинов: {e}")
             return False
     
     def load_equipped_from_cache(self):
+        """Загружает активные скины из кэша"""
         try:
             if os.path.exists(Config.EQUIPPED_SKINS_FILE):
                 if os.path.getsize(Config.EQUIPPED_SKINS_FILE) == 0:
@@ -138,58 +118,51 @@ class SkinManager:
                             self.equipped[category] = equipped[category]
                     return True
         except json.JSONDecodeError as e:
-            print(f"⚠️ Ошибка парсинга equipped_skins.json: {e}")
+            print(f"Ошибка парсинга equipped_skins.json: {e}")
             self.save_equipped_to_cache()
             return True
         except Exception as e:
-            print(f"⚠️ Ошибка загрузки скинов: {e}")
+            print(f"Ошибка загрузки скинов: {e}")
             self.save_equipped_to_cache()
             return False
         return False
     
-    # ============================================================
-    # СИНХРОНИЗАЦИЯ С СЕРВЕРОМ
-    # ============================================================
-    
     def sync_with_server(self):
-        """Синхронизирует активные скины с сервером"""
-        # ===== ВАЖНО: ПРОВЕРЯЕМ АВТОРИЗАЦИЮ =====
+        """Синхронизирует активные скины с сервером (синхронно)"""
         if not self.auth_manager.is_authenticated():
-            print("⚠️ Пользователь не авторизован, пропускаем синхронизацию скинов")
+            print("Пользователь не авторизован, пропускаем синхронизацию скинов")
             return False
         
-        print("🔄 Синхронизация скинов с сервером...")
+        print("Синхронизация скинов с сервером...")
         
         equip_success, message, equipped = self.api_client.get_equipped_skins()
+        
         if equip_success:
-            # Преобразуем формат pipes в pipes_top и pipes_bottom
             if "pipes" in equipped and "pipes_top" not in equipped:
                 pipe_skin = equipped["pipes"]
                 equipped["pipes_top"] = f"{pipe_skin}-top"
                 equipped["pipes_bottom"] = f"{pipe_skin}-bottom"
             
-            # Обновляем активные скины
             categories = ["birds", "pipes_top", "pipes_bottom", "backgrounds"]
             for category in categories:
                 if category in equipped and equipped[category]:
                     self.equipped[category] = equipped[category]
-                    print(f"   ✅ {category}: {equipped[category]}")
+                    print(f"   {category}: {equipped[category]}")
             
             self.save_equipped_to_cache()
             return True
         else:
-            print(f"⚠️ Не удалось загрузить скины: {message}")
+            print(f"Не удалось загрузить скины: {message}")
             return False
     
     def load_equipped_skins(self):
         """Загружает активные скины из кэша и синхронизирует с сервером"""
         self.load_equipped_from_cache()
         
-        # ===== ВАЖНО: СИНХРОНИЗИРУЕМ ТОЛЬКО ЕСЛИ АВТОРИЗОВАН =====
         if self.auth_manager.is_authenticated():
-            print("🔄 Синхронизация скинов с сервером...")
+            print("Синхронизация скинов с сервером...")
             self.sync_with_server()
         else:
-            print("⚠️ Не авторизован, используем локальные скины")
+            print("Не авторизован, используем локальные скины")
         
         return self.get_equipped_skins()
