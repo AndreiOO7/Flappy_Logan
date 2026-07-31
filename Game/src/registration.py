@@ -1,6 +1,4 @@
-# registration.py
 import re
-import os
 from PyQt5.QtWidgets import (QWidget, QLabel, QLineEdit, QPushButton, 
                              QVBoxLayout, QFrame, QHBoxLayout)
 from PyQt5.QtCore import Qt
@@ -13,7 +11,6 @@ from network import APIClient
 from config import Config
 from hyperlink import Hyperlink
 
-
 class RegistrationWindow(QWidget):
     """Окно регистрации нового пользователя"""
     
@@ -21,6 +18,9 @@ class RegistrationWindow(QWidget):
         super().__init__()
         self.auth_manager = AuthManager()
         self.api_client = APIClient(self.auth_manager)
+        
+        self._pending_password = ""
+        self._pending_username = ""
         
         self.setWindowTitle("Флаппи Логан - Регистрация")
         self.setFixedSize(500, 750)
@@ -100,6 +100,7 @@ class RegistrationWindow(QWidget):
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("3-20 символов (A-Z, a-z, 0-9)")
         self.username_input.setMinimumHeight(48)
+        self.username_input.returnPressed.connect(self.register)
         main_layout.addWidget(self.username_input)
 
         password_label = QLabel("Пароль")
@@ -110,6 +111,7 @@ class RegistrationWindow(QWidget):
         self.password_input.setPlaceholderText("Введите пароль (минимум 4 символа)")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setMinimumHeight(48)
+        self.password_input.returnPressed.connect(self.register)
         main_layout.addWidget(self.password_input)
 
         confirm_label = QLabel("Подтвердите пароль")
@@ -120,6 +122,7 @@ class RegistrationWindow(QWidget):
         self.confirm_password_input.setPlaceholderText("Повторите пароль")
         self.confirm_password_input.setEchoMode(QLineEdit.Password)
         self.confirm_password_input.setMinimumHeight(48)
+        self.confirm_password_input.returnPressed.connect(self.register)
         main_layout.addWidget(self.confirm_password_input)
 
         self.register_button = QPushButton("Зарегистрироваться")
@@ -138,24 +141,15 @@ class RegistrationWindow(QWidget):
         self.login_button.clicked.connect(self.show_login)
         main_layout.addWidget(self.login_button)
 
-        # ===== ГИПЕРССЫЛКА =====
         link_layout = QHBoxLayout()
         link_layout.setAlignment(Qt.AlignCenter)
-        
-        website_link = Hyperlink("🌐 Наш сайт", Config.WEBSITE_URL)
+        website_link = Hyperlink("Наш сайт", Config.WEBSITE_URL)
         link_layout.addWidget(website_link)
-        
         main_layout.addLayout(link_layout)
 
         main_layout.addStretch()
         self.setLayout(main_layout)
 
-        # Восстановление сессии
-        if self.auth_manager.is_authenticated():
-            username = self.auth_manager.get_username()
-            if username and username != "Guest":
-                print(f"✅ Восстановлена сессия для: {username}")
-                self.open_game(username)
 
     def register(self):
         username = self.username_input.text().strip()
@@ -193,37 +187,42 @@ class RegistrationWindow(QWidget):
             CustomDialog.warning(self, "Ошибка", "Пароли не совпадают!")
             return
 
+        self._pending_username = username
+        self._pending_password = password
+
         self.register_button.setEnabled(False)
-        self.register_button.setText("⏳ Отправка...")
+        self.register_button.setText("Отправка...")
 
-        # ===== ШАГ 1: РЕГИСТРАЦИЯ =====
-        success, message, user_data = self.api_client.register(username, password)
+        # Асинхронная регистрация
+        self.api_client.register_async(username, password, self._on_register_complete)
 
-        if not success:
-            self.register_button.setEnabled(True)
-            self.register_button.setText("Зарегистрироваться")
-            CustomDialog.warning(self, "Ошибка", f"❌ {message}")
-            return
-
-        CustomDialog.information(self, "Успех", f"✅ {message}")
-
-        # ===== ШАГ 2: АВТОМАТИЧЕСКИЙ ВХОД =====
-        print(f"🔄 Автоматический вход для: {username}")
-        
-        login_success, login_message, login_data = self.api_client.login(username, password)
-
+    def _on_register_complete(self, success, message, user_data):
+        """Обработчик завершения регистрации"""
         self.register_button.setEnabled(True)
         self.register_button.setText("Зарегистрироваться")
-
-        if login_success:
-            print(f"✅ Автоматический вход выполнен для: {username}")
-            self.auth_manager.refresh_session()
-            self.open_game_with_auth(username)
+        
+        if not success:
+            CustomDialog.warning(self, "Ошибка", f"{message}")
+            return
+        
+        CustomDialog.information(self, "Успех", f"{message}")
+        
+        username = self._pending_username
+        password = self._pending_password
+        
+        if username and password:
+            print(f"Автоматический вход для: {username}")
+            
+            # Синхронный вход
+            login_success, login_message, login_data = self.api_client.login(username, password)
+            
+            if login_success:
+                print(f"Вход выполнен для: {username}")
+                self.open_game(username)
+            else:
+                print(f"Вход не удался: {login_message}")
+                self.show_login()
         else:
-            print(f"⚠️ Автоматический вход не удался: {login_message}")
-            CustomDialog.warning(self, "Внимание", 
-                "Регистрация прошла успешно, но автоматический вход не удался.\n"
-                "Пожалуйста, войдите вручную.")
             self.show_login()
 
     def show_login(self):
@@ -231,51 +230,17 @@ class RegistrationWindow(QWidget):
         self.login_window.show()
         self.hide()
 
-    def _load_best_score(self):
-        if not self.auth_manager.is_authenticated():
-            return
-        
-        success, message, best_score = self.api_client.get_best_score()
-        if success:
-            self.auth_manager.update_user_data({"bestScore": best_score})
-
     def open_game(self, username):
-        """Открывает игру (обычный вход)"""
-        if not username or username == "Guest":
-            CustomDialog.warning(self, "Ошибка", "Не удалось определить пользователя!")
-            return
+        """Открывает игру для пользователя"""
+        print(f"Открываю игру для: {username}")
         
-        if not self.auth_manager.refresh_session():
-            CustomDialog.warning(self, "Ошибка", "❌ Пользователь не авторизован!")
-            return
-        
-        if os.path.exists(Config.EQUIPPED_SKINS_FILE):
-            os.remove(Config.EQUIPPED_SKINS_FILE)
-            print("🗑️ Старый кэш скинов удалён")
-        
-        self._load_best_score()
-        
-        self.game_window = FlappyBird(username, self, self.auth_manager)
-        self.game_window.show()
-        self.hide()
-
-    def open_game_with_auth(self, username):
-        """Открывает игру после успешного входа"""
-        if not username or username == "Guest":
+        if not username:
             CustomDialog.warning(self, "Ошибка", "Не удалось определить пользователя!")
             return
         
         if not self.auth_manager.is_authenticated():
-            CustomDialog.warning(self, "Ошибка", "❌ Пользователь не авторизован!")
+            CustomDialog.warning(self, "Ошибка", "Вы не авторизованы!")
             return
-        
-        print(f"✅ Открытие игры для: {self.auth_manager.get_username()}")
-        
-        if os.path.exists(Config.EQUIPPED_SKINS_FILE):
-            os.remove(Config.EQUIPPED_SKINS_FILE)
-            print("🗑️ Старый кэш скинов удалён")
-        
-        self._load_best_score()
         
         self.game_window = FlappyBird(username, self, self.auth_manager)
         self.game_window.show()
@@ -285,7 +250,7 @@ class RegistrationWindow(QWidget):
 class LoginWindow(QWidget):
     """Окно входа пользователя"""
     
-    def __init__(self, registration_window):
+    def __init__(self, registration_window=None):
         super().__init__()
         self.registration_window = registration_window
         
@@ -367,6 +332,7 @@ class LoginWindow(QWidget):
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Введите имя пользователя")
         self.username_input.setMinimumHeight(48)
+        self.username_input.returnPressed.connect(self.login)
         layout.addWidget(self.username_input)
 
         layout.addWidget(QLabel("Пароль"))
@@ -374,6 +340,7 @@ class LoginWindow(QWidget):
         self.password_input.setPlaceholderText("Введите пароль")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setMinimumHeight(48)
+        self.password_input.returnPressed.connect(self.login)
         layout.addWidget(self.password_input)
 
         self.login_button = QPushButton("Войти")
@@ -387,13 +354,10 @@ class LoginWindow(QWidget):
         self.back_button.clicked.connect(self.go_back)
         layout.addWidget(self.back_button)
 
-        # ===== ГИПЕРССЫЛКА =====
         link_layout = QHBoxLayout()
         link_layout.setAlignment(Qt.AlignCenter)
-        
-        website_link = Hyperlink("🌐 Наш сайт", Config.WEBSITE_URL)
+        website_link = Hyperlink("Наш сайт", Config.WEBSITE_URL)
         link_layout.addWidget(website_link)
-        
         layout.addLayout(link_layout)
 
         layout.addStretch()
@@ -412,21 +376,33 @@ class LoginWindow(QWidget):
             return
 
         self.login_button.setEnabled(False)
-        self.login_button.setText("⏳ Вход...")
+        self.login_button.setText("Вход...")
 
+        # Синхронный вход
         success, message, user_data = self.api_client.login(username, password)
 
         self.login_button.setEnabled(True)
         self.login_button.setText("Войти")
 
         if success:
-            CustomDialog.information(self, "Успех", f"✅ {message}")
-            self.auth_manager.refresh_session()
-            self.registration_window.open_game(username)
+            print(f"Вход выполнен для: {username}")
+            CustomDialog.information(self, "Успех", f"{message}")
+            if self.registration_window:
+                self.registration_window.open_game(username)
+            else:
+                from game import FlappyBird
+                self.game_window = FlappyBird(username, None, self.auth_manager)
+                self.game_window.show()
             self.close()
         else:
-            CustomDialog.warning(self, "Ошибка", f"❌ {message}")
+            CustomDialog.warning(self, "Ошибка", f"{message}")
 
     def go_back(self):
-        self.registration_window.show()
+        """Возвращает пользователя к окну регистрации"""
+        if self.registration_window:
+            self.registration_window.show()
+        else:
+            from registration import RegistrationWindow
+            self.registration_window = RegistrationWindow()
+            self.registration_window.show()
         self.close()
