@@ -58,8 +58,8 @@ class Settings:
         "jump_power": -9,
         "pipe_speed": -3,
         "pipe_interval": 1500,
-        "sound_enabled": True,      # Общая громкость
-        "jump_sound_enabled": True, # Звук прыжка (отдельно)
+        "sound_enabled": True,
+        "jump_sound_enabled": True, 
         "difficulty": "normal",
         "volume": 80
     }
