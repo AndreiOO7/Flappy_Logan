@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from sqlalchemy import ForeignKey, String, Integer, DateTime, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,7 +17,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     balance: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
 
     skins: Mapped[List["UserSkin"]] = relationship("UserSkin", back_populates="user", cascade="all, delete-orphan")
     equipped: Mapped["UserEquipped"] = relationship("UserEquipped", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -52,6 +52,6 @@ class GameResult(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False)
-    played_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    played_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship("User", back_populates="game_results")
