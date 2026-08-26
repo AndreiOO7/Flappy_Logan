@@ -55,17 +55,18 @@ async def create_game_result(
 ):
     score = data.score
 
-    new_result = models.GameResult(
-        user_id=current_user.id,
-        score=score
-    )
-    db.add(new_result)
+    if score > 0:
+        new_result = models.GameResult(
+            user_id=current_user.id,
+            score=score
+        )
+        db.add(new_result)
 
-    current_user.balance += score
-    db.add(current_user)
+        current_user.balance += score
+        db.add(current_user)
 
-    await db.commit()
-    await db.refresh(current_user)
+        await db.commit()
+        await db.refresh(current_user)
 
     return {
         "success": True,
