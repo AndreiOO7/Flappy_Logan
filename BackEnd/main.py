@@ -16,6 +16,8 @@ origins = [
     "http://127.0.0.1:5500",
     "https://proactive-reprieve-production-f162.up.railway.app",
     "http://proactive-reprieve-production-f162.up.railway.app",
+    "https://selfless-strength-production-c7fa.up.railway.app/",
+    "http://selfless-strength-production-c7fa.up.railway.app/"
 ]
 
 app.add_middleware(
