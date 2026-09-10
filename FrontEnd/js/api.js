@@ -3,7 +3,7 @@
  * Токен сохраняется в localStorage и автоматически добавляется ко всем запросам.
  */
 
-const API_BASE = 'https://flappylogan-production.up.railway.app/api';
+const API_BASE = 'https://flappylogan-production-6dda.up.railway.app/api';
 const TOKEN_KEY = 'flappy_logan_token';
 
 /**
