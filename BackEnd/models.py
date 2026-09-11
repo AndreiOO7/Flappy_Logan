@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List
-from sqlalchemy import ForeignKey, String, Integer, DateTime, UniqueConstraint
+from sqlalchemy import ForeignKey, String, Integer, DateTime, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -17,7 +17,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     balance: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     skins: Mapped[List["UserSkin"]] = relationship("UserSkin", back_populates="user", cascade="all, delete-orphan")
     equipped: Mapped["UserEquipped"] = relationship("UserEquipped", back_populates="user", uselist=False, cascade="all, delete-orphan")
