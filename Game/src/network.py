@@ -443,3 +443,27 @@ class APIClient:
         except Exception as e:
             self._log_response(0, "best-score", False, str(e))
             return False, f"Ошибка: {str(e)}", 0
+
+    def get_best_score_async(self, callback):
+        """Асинхронное получение лучшего счёта с сервера"""
+        if not self.auth_manager.is_authenticated():
+            callback(False, "Не авторизован", 0)
+            return
+
+        thread = APIThread(
+            "best-score",
+            "GET",
+            token=self.auth_manager.token,
+            timeout=self.timeout
+        )
+
+        def on_finished(success, message, data):
+            if success and isinstance(data, dict):
+                callback(True, "OK", int(data.get("bestScore", 0) or 0))
+            else:
+                callback(False, message, 0)
+
+        thread.finished.connect(on_finished)
+        thread.finished.connect(lambda: self._cleanup_thread(thread))
+        thread.start()
+        self._threads.append(thread)

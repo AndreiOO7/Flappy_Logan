@@ -58,7 +58,7 @@ class FlappyBird(QWidget):
         self.total_score = 0
         self.games_played = 0
         self.load_user_data()
-
+        self.api_client.get_best_score_async(self._on_best_score_loaded)
         self.load_game_assets()
 
         self.bird = Bird(self.bird_image)
@@ -327,10 +327,21 @@ class FlappyBird(QWidget):
     def load_user_data(self):
         user = self.auth_manager.user
         if user:
-            self.best_score = user.get("bestScore", 0)
+            self.best_score = user.get("bestScore") or 0
             self.balance = user.get("balance", 0)
             self.total_score = user.get("totalScore", 0)
             self.games_played = user.get("gamesPlayed", 0)
+
+    def _on_best_score_loaded(self, success, message, best_score):
+        """Callback: обновляем best_score после ответа сервера"""
+        if not success:
+            return
+        self.best_score = max(self.best_score, best_score)
+        self.auth_manager.update_user_data({"bestScore": self.best_score})
+        if hasattr(self, 'stats_label'):
+            self.stats_label.setText(
+                f"Лучший: {self.best_score}  |   Баланс: {self.balance}"
+            )
 
     def save_user_stats(self):
         if self.score_saved:
@@ -1183,3 +1194,4 @@ class FlappyBird(QWidget):
         self.game_timer.stop()
         self.pipe_timer.stop()
         event.accept()
+
