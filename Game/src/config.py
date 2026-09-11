@@ -11,7 +11,7 @@ class Config:
     
     WEBSITE_URL = "https://selfless-strength-production-c7fa.up.railway.app/"
     
-    API_URL = os.getenv("FLAPPY_API_URL", "https://flappylogan-production-6dda.up.railway.app//api")
+    API_URL = os.getenv("FLAPPY_API_URL", "https://flappylogan-production-6dda.up.railway.app/api")
     API_TIMEOUT = int(os.getenv("FLAPPY_API_TIMEOUT", "10"))
     
     BASE_DIR = Path(__file__).parent.parent.absolute()
