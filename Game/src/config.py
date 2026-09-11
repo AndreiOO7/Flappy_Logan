@@ -9,9 +9,9 @@ class Config:
     APP_NAME = "Флаппи Логан"
     APP_VERSION = "2.0.0"
     
-    WEBSITE_URL = "https://proactive-reprieve-production-f162.up.railway.app"
+    WEBSITE_URL = "https://selfless-strength-production-c7fa.up.railway.app/"
     
-    API_URL = os.getenv("FLAPPY_API_URL", "https://flappylogan-production.up.railway.app/api")
+    API_URL = os.getenv("FLAPPY_API_URL", "https://flappylogan-production-6dda.up.railway.app//api")
     API_TIMEOUT = int(os.getenv("FLAPPY_API_TIMEOUT", "10"))
     
     BASE_DIR = Path(__file__).parent.parent.absolute()
